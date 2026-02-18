@@ -42,6 +42,10 @@ const medicineSchema = mongoose.Schema({
     minStockLevel: {
         type: Number,
         default: 10
+    },
+    invoiceNumber: {
+        type: String,
+        required: false
     }
 }, {
     timestamps: true

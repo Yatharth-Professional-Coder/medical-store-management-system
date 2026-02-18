@@ -57,9 +57,14 @@ const SupplierManagement = () => {
             <Link to="/pharmacy-admin" className="text-gray-600 hover:text-gray-900 mb-4 inline-block font-bold">&larr; Back to Dashboard</Link>
             <div className="flex justify-between items-center mb-6">
                 <h1 className="text-3xl font-bold text-gray-800">Supplier Management</h1>
-                <Link to="/supplier-ledger" className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 font-bold shadow">
-                    View Ledger
-                </Link>
+                <div className="flex gap-2">
+                    <Link to="/supplier-ledger" className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 font-bold shadow">
+                        View Ledger
+                    </Link>
+                    <Link to="/supplier-invoices" className="bg-teal-600 text-white px-4 py-2 rounded hover:bg-teal-700 font-bold shadow">
+                        View Invoices
+                    </Link>
+                </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">

@@ -8,6 +8,7 @@ import BillsHistory from './pages/BillsHistory';
 import SupplierManagement from './pages/SupplierManagement';
 import CustomerLedger from './pages/CustomerLedger';
 import SupplierLedger from './pages/SupplierLedger';
+import SupplierInvoices from './pages/SupplierInvoices';
 
 function App() {
   return (
@@ -22,6 +23,7 @@ function App() {
         <Route path="/customer-ledger" element={<CustomerLedger />} />
         <Route path="/suppliers" element={<SupplierManagement />} />
         <Route path="/supplier-ledger" element={<SupplierLedger />} />
+        <Route path="/supplier-invoices" element={<SupplierInvoices />} />
       </Routes>
     </Router>
   );

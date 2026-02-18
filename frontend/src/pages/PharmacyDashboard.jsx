@@ -14,13 +14,15 @@ const PharmacyDashboard = () => {
         supplierPrice: '',
         quantity: '',
         supplier: '',
-        minStockLevel: ''
+        minStockLevel: '',
+        invoiceNumber: ''
     });
     const [searchTerm, setSearchTerm] = useState('');
     const [suggestions, setSuggestions] = useState([]);
     const [editId, setEditId] = useState(null);
     const [isBulkMode, setIsBulkMode] = useState(false);
     const [bulkSupplier, setBulkSupplier] = useState('');
+    const [bulkInvoiceNumber, setBulkInvoiceNumber] = useState('');
     const [bulkData, setBulkData] = useState([
         { name: '', batchNumber: '', expiryDate: '', mrp: '', supplierPrice: '', quantity: '', minStockLevel: '' }
     ]);
@@ -92,7 +94,7 @@ const PharmacyDashboard = () => {
                 alert('Medicine Added');
             }
             fetchMedicines();
-            setFormData({ name: '', batchNumber: '', expiryDate: '', mrp: '', supplierPrice: '', quantity: '', supplier: '', minStockLevel: '' });
+            setFormData({ name: '', batchNumber: '', expiryDate: '', mrp: '', supplierPrice: '', quantity: '', supplier: '', minStockLevel: '', invoiceNumber: '' });
         } catch (error) {
             alert(error.response?.data?.message || 'Error saving medicine');
         }
@@ -109,14 +111,15 @@ const PharmacyDashboard = () => {
             supplierPrice: medicine.supplierPrice,
             quantity: medicine.quantity,
             supplier: medicine.supplier || '',
-            minStockLevel: medicine.minStockLevel || ''
+            minStockLevel: medicine.minStockLevel || '',
+            invoiceNumber: medicine.invoiceNumber || ''
         });
         window.scrollTo(0, 0); // Scroll to form
     };
 
     const handleCancelEdit = () => {
         setEditId(null);
-        setFormData({ name: '', batchNumber: '', expiryDate: '', mrp: '', supplierPrice: '', quantity: '', supplier: '', minStockLevel: '' });
+        setFormData({ name: '', batchNumber: '', expiryDate: '', mrp: '', supplierPrice: '', quantity: '', supplier: '', minStockLevel: '', invoiceNumber: '' });
     };
 
     const handleDelete = async (id) => {
@@ -183,7 +186,7 @@ const PharmacyDashboard = () => {
             return;
         }
 
-        const dataToSend = bulkData.map(item => ({ ...item, supplier: bulkSupplier }));
+        const dataToSend = bulkData.map(item => ({ ...item, supplier: bulkSupplier, invoiceNumber: bulkInvoiceNumber }));
 
         try {
             await api.post('/medicines/bulk', dataToSend);
@@ -191,6 +194,7 @@ const PharmacyDashboard = () => {
             setIsBulkMode(false);
             setBulkData([{ name: '', batchNumber: '', expiryDate: '', mrp: '', supplierPrice: '', quantity: '', minStockLevel: '' }]);
             setBulkSupplier('');
+            setBulkInvoiceNumber('');
             fetchMedicines();
         } catch (error) {
             alert(error.response?.data?.message || 'Error adding medicines');
@@ -230,6 +234,9 @@ const PharmacyDashboard = () => {
                     <Link to="/suppliers" className="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 font-bold shadow">
                         Manage Suppliers
                     </Link>
+                    <Link to="/supplier-invoices" className="bg-teal-600 text-white px-4 py-2 rounded hover:bg-teal-700 font-bold shadow">
+                        View Invoices
+                    </Link>
                     <Link to="/customer-ledger" className="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700 font-bold shadow">
                         Udhaar/Credit
                     </Link>
@@ -252,16 +259,28 @@ const PharmacyDashboard = () => {
 
                     {isBulkMode ? (
                         <div className="space-y-4">
-                            <div className="mb-4">
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Select Supplier for Batch</label>
-                                <select
-                                    value={bulkSupplier}
-                                    onChange={(e) => setBulkSupplier(e.target.value)}
-                                    className="w-full md:w-1/2 p-2 border rounded focus:ring-2 focus:ring-blue-500"
-                                >
-                                    <option value="">-- Select Supplier --</option>
-                                    {suppliers.map(s => <option key={s._id} value={s._id}>{s.name}</option>)}
-                                </select>
+                            <div className="mb-4 flex gap-4">
+                                <div className="w-1/2">
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Select Supplier for Batch</label>
+                                    <select
+                                        value={bulkSupplier}
+                                        onChange={(e) => setBulkSupplier(e.target.value)}
+                                        className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500"
+                                    >
+                                        <option value="">-- Select Supplier --</option>
+                                        {suppliers.map(s => <option key={s._id} value={s._id}>{s.name}</option>)}
+                                    </select>
+                                </div>
+                                <div className="w-1/2">
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Invoice Number</label>
+                                    <input
+                                        type="text"
+                                        placeholder="Invoice #"
+                                        value={bulkInvoiceNumber}
+                                        onChange={(e) => setBulkInvoiceNumber(e.target.value)}
+                                        className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500"
+                                    />
+                                </div>
                             </div>
                             <div className="overflow-x-auto">
                                 <table className="w-full text-sm">
@@ -320,6 +339,7 @@ const PharmacyDashboard = () => {
                             <div className="flex gap-2">
                                 <input name="batchNumber" placeholder="Batch No" value={formData.batchNumber} onChange={handleChange} className="w-full p-2 border rounded" required />
                                 <input name="quantity" type="number" placeholder="Qty" value={formData.quantity} onChange={handleChange} className="w-full p-2 border rounded" required />
+                                <input name="invoiceNumber" placeholder="Invoice #" value={formData.invoiceNumber} onChange={handleChange} className="w-full p-2 border rounded" />
                             </div>
                             <div className="flex gap-2">
                                 <input name="mrp" type="number" placeholder="MRP" value={formData.mrp} onChange={handleChange} className="w-full p-2 border rounded focus:ring-2 focus:ring-green-500" required />

@@ -15,7 +15,8 @@ const addMedicine = asyncHandler(async (req, res) => {
         price, // Selling Price
         quantity,
         supplier, // Now expects Supplier ID
-        minStockLevel
+        minStockLevel,
+        invoiceNumber
     } = req.body;
 
     const medicine = await Medicine.create({
@@ -28,7 +29,8 @@ const addMedicine = asyncHandler(async (req, res) => {
         quantity,
         pharmacyId: req.user.pharmacyId,
         supplier,
-        minStockLevel
+        minStockLevel,
+        invoiceNumber
     });
 
     if (medicine) {
@@ -94,6 +96,7 @@ const updateMedicine = asyncHandler(async (req, res) => {
         medicine.quantity = req.body.quantity || medicine.quantity;
         medicine.supplier = req.body.supplier || medicine.supplier;
         medicine.minStockLevel = req.body.minStockLevel || medicine.minStockLevel;
+        medicine.invoiceNumber = req.body.invoiceNumber || medicine.invoiceNumber;
 
         const updatedMedicine = await medicine.save();
         res.json(updatedMedicine);
@@ -123,4 +126,33 @@ const deleteMedicine = asyncHandler(async (req, res) => {
     }
 });
 
-module.exports = { addMedicine, addBulkMedicines, getMedicines, updateMedicine, deleteMedicine };
+// @desc    Get Invoices by Supplier
+// @route   GET /api/medicines/supplier/:supplierId/invoices
+// @access  Pharmacy Admin
+const getInvoicesBySupplier = asyncHandler(async (req, res) => {
+    const { supplierId } = req.params;
+    // Find all medicines for this supplier and return distinct invoice numbers
+    // Filter out null/empty invoice numbers
+    const invoices = await Medicine.find({
+        pharmacyId: req.user.pharmacyId,
+        supplier: supplierId,
+        invoiceNumber: { $ne: null, $ne: "" }
+    }).distinct('invoiceNumber');
+
+    res.json(invoices);
+});
+
+// @desc    Get Items by Invoice
+// @route   GET /api/medicines/supplier/:supplierId/invoice/:invoiceNumber
+// @access  Pharmacy Admin
+const getItemsByInvoice = asyncHandler(async (req, res) => {
+    const { supplierId, invoiceNumber } = req.params;
+    const items = await Medicine.find({
+        pharmacyId: req.user.pharmacyId,
+        supplier: supplierId,
+        invoiceNumber
+    });
+    res.json(items);
+});
+
+module.exports = { addMedicine, addBulkMedicines, getMedicines, updateMedicine, deleteMedicine, getInvoicesBySupplier, getItemsByInvoice };
