@@ -13,7 +13,15 @@ const medicineSchema = mongoose.Schema({
         type: Date,
         required: true
     },
-    price: {
+    mrp: { // Maximum Retail Price (Printed)
+        type: Number,
+        required: true
+    },
+    supplierPrice: { // Cost Price
+        type: Number,
+        required: true
+    },
+    price: { // Selling Price (can be less than or equal to MRP)
         type: Number,
         required: true
     },
@@ -27,7 +35,9 @@ const medicineSchema = mongoose.Schema({
         required: true
     },
     supplier: {
-        type: String
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Supplier',
+        required: false // Optional for older records or quick adds
     },
     minStockLevel: {
         type: Number,

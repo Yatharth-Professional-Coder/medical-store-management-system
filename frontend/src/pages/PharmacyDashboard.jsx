@@ -5,11 +5,20 @@ import { medicineSuggestions } from '../data/medicineSuggestions';
 
 const PharmacyDashboard = () => {
     const [medicines, setMedicines] = useState([]);
+    const [suppliers, setSuppliers] = useState([]);
     const [formData, setFormData] = useState({
-        name: '', batchNumber: '', expiryDate: '', price: '', quantity: '', supplier: '', minStockLevel: ''
+        name: '',
+        batchNumber: '',
+        expiryDate: '',
+        mrp: '',
+        supplierPrice: '',
+        quantity: '',
+        supplier: '',
+        minStockLevel: ''
     });
     const [searchTerm, setSearchTerm] = useState('');
     const [suggestions, setSuggestions] = useState([]);
+    const [editId, setEditId] = useState(null);
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -18,6 +27,7 @@ const PharmacyDashboard = () => {
             navigate('/');
         } else {
             fetchMedicines();
+            fetchSuppliers();
         }
     }, [navigate]);
 
@@ -27,6 +37,15 @@ const PharmacyDashboard = () => {
             setMedicines(data);
         } catch (error) {
             console.error(error);
+        }
+    };
+
+    const fetchSuppliers = async () => {
+        try {
+            const { data } = await api.get('/suppliers');
+            setSuppliers(data);
+        } catch (error) {
+            console.error('Error fetching suppliers');
         }
     };
 
@@ -55,10 +74,6 @@ const PharmacyDashboard = () => {
         return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     };
 
-    const [editId, setEditId] = useState(null);
-
-    // ... (fetchSuggestions, handleChange, getDaysToExpiry same as before)
-
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
@@ -71,7 +86,7 @@ const PharmacyDashboard = () => {
                 alert('Medicine Added');
             }
             fetchMedicines();
-            setFormData({ name: '', batchNumber: '', expiryDate: '', price: '', quantity: '', supplier: '', minStockLevel: '' });
+            setFormData({ name: '', batchNumber: '', expiryDate: '', mrp: '', supplierPrice: '', quantity: '', supplier: '', minStockLevel: '' });
         } catch (error) {
             alert(error.response?.data?.message || 'Error saving medicine');
         }
@@ -189,8 +204,20 @@ const PharmacyDashboard = () => {
                             <input name="quantity" type="number" placeholder="Qty" value={formData.quantity} onChange={handleChange} className="w-full p-2 border rounded" required />
                         </div>
                         <div className="flex gap-2">
-                            <input name="price" type="number" placeholder="Price" value={formData.price} onChange={handleChange} className="w-full p-2 border rounded" required />
-                            <input name="minStockLevel" type="number" placeholder="Min Stock" value={formData.minStockLevel} onChange={handleChange} className="w-full p-2 border rounded" />
+                            <input name="mrp" type="number" placeholder="MRP" value={formData.mrp} onChange={handleChange} className="w-full p-2 border rounded focus:ring-2 focus:ring-green-500" required />
+                            <input name="supplierPrice" type="number" placeholder="Supplier Price (Cost)" value={formData.supplierPrice} onChange={handleChange} className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500" required />
+                        </div>
+                        <div className="flex gap-2">
+                            <select
+                                name="supplier"
+                                value={formData.supplier}
+                                onChange={handleChange}
+                                className="w-2/3 p-2 border rounded"
+                            >
+                                <option value="">Select Supplier</option>
+                                {suppliers.map(s => <option key={s._id} value={s._id}>{s.name}</option>)}
+                            </select>
+                            <input name="minStockLevel" type="number" placeholder="Min Stock" value={formData.minStockLevel} onChange={handleChange} className="w-1/3 p-2 border rounded" />
                         </div>
                         <label className="block text-sm text-gray-600">Expiry Date</label>
                         <input name="expiryDate" type="date" value={formData.expiryDate} onChange={handleChange} className="w-full p-2 border rounded" required />

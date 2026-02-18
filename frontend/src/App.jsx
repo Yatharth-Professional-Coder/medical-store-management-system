@@ -5,6 +5,7 @@ import PharmacyDashboard from './pages/PharmacyDashboard';
 import RegisterPharmacy from './pages/RegisterPharmacy';
 import POSPage from './pages/POSPage';
 import BillsHistory from './pages/BillsHistory';
+import SupplierManagement from './pages/SupplierManagement';
 
 function App() {
   return (
@@ -16,6 +17,7 @@ function App() {
         <Route path="/pharmacy-admin" element={<PharmacyDashboard />} />
         <Route path="/pos" element={<POSPage />} />
         <Route path="/sales-history" element={<BillsHistory />} />
+        <Route path="/suppliers" element={<SupplierManagement />} />
       </Routes>
     </Router>
   );

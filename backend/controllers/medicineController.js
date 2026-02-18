@@ -10,9 +10,11 @@ const addMedicine = asyncHandler(async (req, res) => {
         name,
         batchNumber,
         expiryDate,
-        price,
+        mrp,
+        supplierPrice,
+        price, // Selling Price
         quantity,
-        supplier,
+        supplier, // Now expects Supplier ID
         minStockLevel
     } = req.body;
 
@@ -20,6 +22,8 @@ const addMedicine = asyncHandler(async (req, res) => {
         name,
         batchNumber,
         expiryDate,
+        mrp,
+        supplierPrice,
         price,
         quantity,
         pharmacyId: req.user.pharmacyId,
@@ -58,6 +62,8 @@ const updateMedicine = asyncHandler(async (req, res) => {
         medicine.name = req.body.name || medicine.name;
         medicine.batchNumber = req.body.batchNumber || medicine.batchNumber;
         medicine.expiryDate = req.body.expiryDate || medicine.expiryDate;
+        medicine.mrp = req.body.mrp || medicine.mrp;
+        medicine.supplierPrice = req.body.supplierPrice || medicine.supplierPrice;
         medicine.price = req.body.price || medicine.price;
         medicine.quantity = req.body.quantity || medicine.quantity;
         medicine.supplier = req.body.supplier || medicine.supplier;

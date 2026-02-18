@@ -26,8 +26,8 @@ const POSPage = () => {
         const existingItem = cart.find(item => item.medicineId === medicine._id);
 
         if (existingItem) {
-            if (existingItem.quantity + 1 > medicine.stock) {
-                alert(`Only ${medicine.stock} items available in stock!`);
+            if (existingItem.quantity + 1 > medicine.quantity) {
+                alert(`Only ${medicine.quantity} items available in stock!`);
                 return;
             }
             setCart(cart.map(item =>
@@ -36,7 +36,7 @@ const POSPage = () => {
                     : item
             ));
         } else {
-            if (medicine.stock < 1) {
+            if (medicine.quantity < 1) {
                 alert('Out of Stock!');
                 return;
             }
@@ -44,9 +44,9 @@ const POSPage = () => {
                 medicineId: medicine._id,
                 name: medicine.name,
                 batchNumber: medicine.batchNumber,
-                price: medicine.price,
+                price: medicine.mrp, // Use MRP for billing
                 quantity: 1,
-                amount: medicine.price
+                amount: medicine.mrp
             }]);
         }
     };
@@ -59,8 +59,8 @@ const POSPage = () => {
         if (newQty < 1) return;
 
         const medicine = medicines.find(m => m._id === medicineId);
-        if (newQty > medicine.stock) {
-            alert(`Only ${medicine.stock} items available in stock!`);
+        if (newQty > medicine.quantity) {
+            alert(`Only ${medicine.quantity} items available in stock!`);
             return;
         }
 
@@ -134,7 +134,7 @@ const POSPage = () => {
                         const isExpired = new Date(medicine.expiryDate) < new Date();
                         return (
                             <div key={medicine._id}
-                                className={`p-4 rounded shadow transition ${isExpired || medicine.stock === 0 ? 'bg-red-50 opacity-60 cursor-not-allowed' : 'bg-white hover:shadow-lg cursor-pointer'}`}
+                                className={`p-4 rounded shadow transition ${isExpired || medicine.quantity === 0 ? 'bg-red-50 opacity-60 cursor-not-allowed' : 'bg-white hover:shadow-lg cursor-pointer'}`}
                                 onClick={() => !isExpired && addToCart(medicine)}
                             >
                                 <h3 className="font-bold text-lg flex justify-between">
@@ -143,9 +143,9 @@ const POSPage = () => {
                                 </h3>
                                 <p className="text-sm text-gray-500">Batch: {medicine.batchNumber}</p>
                                 <div className="flex justify-between items-center mt-2">
-                                    <span className="text-green-600 font-bold">₹{medicine.price}</span>
+                                    <span className="text-green-600 font-bold">MRP: ₹{medicine.mrp}</span>
                                     <span className={`text-sm ${medicine.stock < 10 ? 'text-red-500' : 'text-gray-600'}`}>
-                                        Stock: {medicine.stock}
+                                        Stock: {medicine.quantity}
                                     </span>
                                 </div>
                             </div>
