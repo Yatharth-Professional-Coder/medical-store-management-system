@@ -39,6 +39,32 @@ const addMedicine = asyncHandler(async (req, res) => {
     }
 });
 
+// @desc    Add multiple medicines
+// @route   POST /api/medicines/bulk
+// @access  Pharmacy Admin
+const addBulkMedicines = asyncHandler(async (req, res) => {
+    const medicinesData = req.body; // Expects an array
+
+    if (!Array.isArray(medicinesData) || medicinesData.length === 0) {
+        res.status(400);
+        throw new Error('No medicines data provided');
+    }
+
+    const processedMedicines = medicinesData.map(med => ({
+        ...med,
+        pharmacyId: req.user.pharmacyId,
+        price: med.price || med.mrp // Fallback logic if needed
+    }));
+
+    try {
+        const medicines = await Medicine.insertMany(processedMedicines);
+        res.status(201).json(medicines);
+    } catch (error) {
+        res.status(400);
+        throw new Error('Error adding bulk medicines: ' + error.message);
+    }
+});
+
 // @desc    Get all medicines for a pharmacy
 // @route   GET /api/medicines
 // @access  Pharmacy Admin / Staff
@@ -97,4 +123,4 @@ const deleteMedicine = asyncHandler(async (req, res) => {
     }
 });
 
-module.exports = { addMedicine, getMedicines, updateMedicine, deleteMedicine };
+module.exports = { addMedicine, addBulkMedicines, getMedicines, updateMedicine, deleteMedicine };

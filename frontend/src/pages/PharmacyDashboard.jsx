@@ -19,6 +19,10 @@ const PharmacyDashboard = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [suggestions, setSuggestions] = useState([]);
     const [editId, setEditId] = useState(null);
+    const [isBulkMode, setIsBulkMode] = useState(false);
+    const [bulkData, setBulkData] = useState([
+        { name: '', batchNumber: '', expiryDate: '', mrp: '', supplierPrice: '', quantity: '', supplier: '', minStockLevel: '' }
+    ]);
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -147,6 +151,42 @@ const PharmacyDashboard = () => {
         }
     };
 
+    const handleBulkChange = (index, e) => {
+        const { name, value } = e.target;
+        const list = [...bulkData];
+        list[index][name] = value;
+        setBulkData(list);
+    };
+
+    const handleAddRow = () => {
+        setBulkData([...bulkData, { name: '', batchNumber: '', expiryDate: '', mrp: '', supplierPrice: '', quantity: '', supplier: '', minStockLevel: '' }]);
+    };
+
+    const handleRemoveRow = (index) => {
+        const list = [...bulkData];
+        list.splice(index, 1);
+        setBulkData(list);
+    };
+
+    const handleBulkSubmit = async () => {
+        // Validate
+        const isValid = bulkData.every(item => item.name && item.batchNumber && item.expiryDate && item.mrp && item.supplierPrice && item.quantity);
+        if (!isValid) {
+            alert('Please fill all required fields in all rows');
+            return;
+        }
+
+        try {
+            await api.post('/medicines/bulk', bulkData);
+            alert('Medicines added successfully');
+            setIsBulkMode(false);
+            setBulkData([{ name: '', batchNumber: '', expiryDate: '', mrp: '', supplierPrice: '', quantity: '', supplier: '', minStockLevel: '' }]);
+            fetchMedicines();
+        } catch (error) {
+            alert(error.response?.data?.message || 'Error adding medicines');
+        }
+    };
+
     const handleLogout = () => {
         localStorage.removeItem('userInfo');
         navigate('/');
@@ -184,60 +224,117 @@ const PharmacyDashboard = () => {
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className={`grid grid-cols-1 ${isBulkMode ? '' : 'lg:grid-cols-3'} gap-8`}>
                 {/* Inventory Form */}
                 <div className="bg-white p-6 rounded-lg shadow-md h-fit">
-                    <h2 className="text-xl font-bold mb-4 border-b pb-2">{editId ? 'Edit Medicine' : 'Add Medicine'}</h2>
-                    <form onSubmit={handleSubmit} className="space-y-3">
-                        <input
-                            name="name"
-                            placeholder="Medicine Name"
-                            value={formData.name}
-                            onChange={handleChange}
-                            list="medicine-suggestions"
-                            className="w-full p-2 border rounded"
-                            required
-                        />
-                        <datalist id="medicine-suggestions">
-                            {suggestions.map((name, index) => (
-                                <option key={index} value={name} />
-                            ))}
-                        </datalist>
-                        <div className="flex gap-2">
-                            <input name="batchNumber" placeholder="Batch No" value={formData.batchNumber} onChange={handleChange} className="w-full p-2 border rounded" required />
-                            <input name="quantity" type="number" placeholder="Qty" value={formData.quantity} onChange={handleChange} className="w-full p-2 border rounded" required />
-                        </div>
-                        <div className="flex gap-2">
-                            <input name="mrp" type="number" placeholder="MRP" value={formData.mrp} onChange={handleChange} className="w-full p-2 border rounded focus:ring-2 focus:ring-green-500" required />
-                            <input name="supplierPrice" type="number" placeholder="Supplier Price (Cost)" value={formData.supplierPrice} onChange={handleChange} className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500" required />
-                        </div>
-                        <div className="flex gap-2">
-                            <select
-                                name="supplier"
-                                value={formData.supplier}
-                                onChange={handleChange}
-                                className="w-2/3 p-2 border rounded"
-                            >
-                                <option value="">Select Supplier</option>
-                                {suppliers.map(s => <option key={s._id} value={s._id}>{s.name}</option>)}
-                            </select>
-                            <input name="minStockLevel" type="number" placeholder="Min Stock" value={formData.minStockLevel} onChange={handleChange} className="w-1/3 p-2 border rounded" />
-                        </div>
-                        <label className="block text-sm text-gray-600">Expiry Date</label>
-                        <input name="expiryDate" type="date" value={formData.expiryDate} onChange={handleChange} className="w-full p-2 border rounded" required />
-                        <input name="supplier" placeholder="Supplier" value={formData.supplier} onChange={handleChange} className="w-full p-2 border rounded" />
+                    <div className="flex justify-between items-center mb-4 border-b pb-2">
+                        <h2 className="text-xl font-bold">{isBulkMode ? 'Bulk Add Medicines' : (editId ? 'Edit Medicine' : 'Add Medicine')}</h2>
+                        <button
+                            onClick={() => setIsBulkMode(!isBulkMode)}
+                            className="text-sm bg-indigo-100 text-indigo-700 px-3 py-1 rounded hover:bg-indigo-200"
+                        >
+                            {isBulkMode ? 'Switch to Single' : 'Switch to Bulk'}
+                        </button>
+                    </div>
 
-                        <div className="flex gap-2">
-                            <button type="submit" className={`w-full text-white p-2 rounded font-semibold ${editId ? 'bg-blue-600 hover:bg-blue-700' : 'bg-green-600 hover:bg-green-700'}`}>
-                                {editId ? 'Update Medicine' : 'Add to Inventory'}
-                            </button>
-                            {editId && (
-                                <button type="button" onClick={handleCancelEdit} className="w-1/3 bg-gray-500 text-white p-2 rounded hover:bg-gray-600 font-semibold">
-                                    Cancel
-                                </button>
-                            )}
+                    {isBulkMode ? (
+                        <div className="space-y-4">
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-sm">
+                                    <thead>
+                                        <tr className="bg-gray-50">
+                                            <th className="p-2">Name</th>
+                                            <th className="p-2">Batch</th>
+                                            <th className="p-2">Expiry</th>
+                                            <th className="p-2">MRP</th>
+                                            <th className="p-2">Cost</th>
+                                            <th className="p-2">Qty</th>
+                                            <th className="p-2">Supplier</th>
+                                            <th className="p-2">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {bulkData.map((row, index) => (
+                                            <tr key={index}>
+                                                <td className="p-1"><input name="name" value={row.name} onChange={(e) => handleBulkChange(index, e)} className="w-full border p-1 rounded" placeholder="Name" /></td>
+                                                <td className="p-1"><input name="batchNumber" value={row.batchNumber} onChange={(e) => handleBulkChange(index, e)} className="w-full border p-1 rounded" placeholder="Batch" /></td>
+                                                <td className="p-1"><input name="expiryDate" type="date" value={row.expiryDate} onChange={(e) => handleBulkChange(index, e)} className="w-full border p-1 rounded" /></td>
+                                                <td className="p-1"><input name="mrp" type="number" value={row.mrp} onChange={(e) => handleBulkChange(index, e)} className="w-16 border p-1 rounded" placeholder="MRP" /></td>
+                                                <td className="p-1"><input name="supplierPrice" type="number" value={row.supplierPrice} onChange={(e) => handleBulkChange(index, e)} className="w-16 border p-1 rounded" placeholder="Cost" /></td>
+                                                <td className="p-1"><input name="quantity" type="number" value={row.quantity} onChange={(e) => handleBulkChange(index, e)} className="w-16 border p-1 rounded" placeholder="Qty" /></td>
+                                                <td className="p-1">
+                                                    <select name="supplier" value={row.supplier} onChange={(e) => handleBulkChange(index, e)} className="w-24 border p-1 rounded">
+                                                        <option value="">Select</option>
+                                                        {suppliers.map(s => <option key={s._id} value={s._id}>{s.name}</option>)}
+                                                    </select>
+                                                </td>
+                                                <td className="p-1">
+                                                    {bulkData.length > 1 && (
+                                                        <button onClick={() => handleRemoveRow(index)} className="text-red-500 hover:text-red-700 font-bold">X</button>
+                                                    )}
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div className="flex gap-2">
+                                <button onClick={handleAddRow} className="bg-gray-200 text-gray-800 px-4 py-2 rounded hover:bg-gray-300 font-semibold">+ Add Row</button>
+                                <button onClick={handleBulkSubmit} className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 font-semibold flex-1">Submit All</button>
+                            </div>
                         </div>
-                    </form>
+                    ) : (
+                        <form onSubmit={handleSubmit} className="space-y-3">
+                            <input
+                                name="name"
+                                placeholder="Medicine Name"
+                                value={formData.name}
+                                onChange={handleChange}
+                                list="medicine-suggestions"
+                                className="w-full p-2 border rounded"
+                                required
+                            />
+                            <datalist id="medicine-suggestions">
+                                {suggestions.map((name, index) => (
+                                    <option key={index} value={name} />
+                                ))}
+                            </datalist>
+                            <div className="flex gap-2">
+                                <input name="batchNumber" placeholder="Batch No" value={formData.batchNumber} onChange={handleChange} className="w-full p-2 border rounded" required />
+                                <input name="quantity" type="number" placeholder="Qty" value={formData.quantity} onChange={handleChange} className="w-full p-2 border rounded" required />
+                            </div>
+                            <div className="flex gap-2">
+                                <input name="mrp" type="number" placeholder="MRP" value={formData.mrp} onChange={handleChange} className="w-full p-2 border rounded focus:ring-2 focus:ring-green-500" required />
+                                <input name="supplierPrice" type="number" placeholder="Supplier Price (Cost)" value={formData.supplierPrice} onChange={handleChange} className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500" required />
+                            </div>
+                            <div className="flex gap-2">
+                                <select
+                                    name="supplier"
+                                    value={formData.supplier}
+                                    onChange={handleChange}
+                                    className="w-2/3 p-2 border rounded"
+                                >
+                                    <option value="">Select Supplier</option>
+                                    {suppliers.map(s => <option key={s._id} value={s._id}>{s.name}</option>)}
+                                </select>
+                                <input name="minStockLevel" type="number" placeholder="Min Stock" value={formData.minStockLevel} onChange={handleChange} className="w-1/3 p-2 border rounded" />
+                            </div>
+                            <label className="block text-sm text-gray-600">Expiry Date</label>
+                            <input name="expiryDate" type="date" value={formData.expiryDate} onChange={handleChange} className="w-full p-2 border rounded" required />
+                            <input name="supplier" placeholder="Supplier" value={formData.supplier} onChange={handleChange} className="w-full p-2 border rounded" />
+
+                            <div className="flex gap-2">
+                                <button type="submit" className={`w-full text-white p-2 rounded font-semibold ${editId ? 'bg-blue-600 hover:bg-blue-700' : 'bg-green-600 hover:bg-green-700'}`}>
+                                    {editId ? 'Update Medicine' : 'Add to Inventory'}
+                                </button>
+                                {editId && (
+                                    <button type="button" onClick={handleCancelEdit} className="w-1/3 bg-gray-500 text-white p-2 rounded hover:bg-gray-600 font-semibold">
+                                        Cancel
+                                    </button>
+                                )}
+                            </div>
+                        </form>
+                    )}
                 </div>
 
                 {/* Inventory List */}
