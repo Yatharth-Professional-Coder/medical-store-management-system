@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import api from '../api/axios';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 
 const PharmacyDashboard = () => {
     const [medicines, setMedicines] = useState([]);
@@ -70,7 +70,12 @@ const PharmacyDashboard = () => {
             <div className="flex justify-between items-center mb-6">
                 <h1 className="text-3xl font-bold text-blue-800">Pharmacy Dashboard</h1>
                 <div className='flex gap-4'>
-                    <button className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Billing (Coming Soon)</button>
+                    <Link to="/pos" className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 font-bold shadow">
+                        POS / Billing
+                    </Link>
+                    <Link to="/sales-history" className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 font-bold shadow">
+                        Sales History
+                    </Link>
                     <button onClick={handleLogout} className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">Logout</button>
                 </div>
             </div>

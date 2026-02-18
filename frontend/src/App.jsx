@@ -3,6 +3,8 @@ import Login from './pages/Login';
 import SuperAdminDashboard from './pages/SuperAdminDashboard';
 import PharmacyDashboard from './pages/PharmacyDashboard';
 import RegisterPharmacy from './pages/RegisterPharmacy';
+import POSPage from './pages/POSPage';
+import BillsHistory from './pages/BillsHistory';
 
 function App() {
   return (
@@ -12,6 +14,8 @@ function App() {
         <Route path="/register" element={<RegisterPharmacy />} />
         <Route path="/super-admin" element={<SuperAdminDashboard />} />
         <Route path="/pharmacy-admin" element={<PharmacyDashboard />} />
+        <Route path="/pos" element={<POSPage />} />
+        <Route path="/sales-history" element={<BillsHistory />} />
       </Routes>
     </Router>
   );
