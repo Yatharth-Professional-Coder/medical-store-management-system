@@ -20,8 +20,9 @@ const PharmacyDashboard = () => {
     const [suggestions, setSuggestions] = useState([]);
     const [editId, setEditId] = useState(null);
     const [isBulkMode, setIsBulkMode] = useState(false);
+    const [bulkSupplier, setBulkSupplier] = useState('');
     const [bulkData, setBulkData] = useState([
-        { name: '', batchNumber: '', expiryDate: '', mrp: '', supplierPrice: '', quantity: '', supplier: '', minStockLevel: '' }
+        { name: '', batchNumber: '', expiryDate: '', mrp: '', supplierPrice: '', quantity: '', minStockLevel: '' }
     ]);
     const navigate = useNavigate();
 
@@ -159,7 +160,7 @@ const PharmacyDashboard = () => {
     };
 
     const handleAddRow = () => {
-        setBulkData([...bulkData, { name: '', batchNumber: '', expiryDate: '', mrp: '', supplierPrice: '', quantity: '', supplier: '', minStockLevel: '' }]);
+        setBulkData([...bulkData, { name: '', batchNumber: '', expiryDate: '', mrp: '', supplierPrice: '', quantity: '', minStockLevel: '' }]);
     };
 
     const handleRemoveRow = (index) => {
@@ -170,17 +171,25 @@ const PharmacyDashboard = () => {
 
     const handleBulkSubmit = async () => {
         // Validate
+        if (!bulkSupplier) {
+            alert('Please select a supplier for this batch');
+            return;
+        }
+
         const isValid = bulkData.every(item => item.name && item.batchNumber && item.expiryDate && item.mrp && item.supplierPrice && item.quantity);
         if (!isValid) {
             alert('Please fill all required fields in all rows');
             return;
         }
 
+        const dataToSend = bulkData.map(item => ({ ...item, supplier: bulkSupplier }));
+
         try {
-            await api.post('/medicines/bulk', bulkData);
+            await api.post('/medicines/bulk', dataToSend);
             alert('Medicines added successfully');
             setIsBulkMode(false);
-            setBulkData([{ name: '', batchNumber: '', expiryDate: '', mrp: '', supplierPrice: '', quantity: '', supplier: '', minStockLevel: '' }]);
+            setBulkData([{ name: '', batchNumber: '', expiryDate: '', mrp: '', supplierPrice: '', quantity: '', minStockLevel: '' }]);
+            setBulkSupplier('');
             fetchMedicines();
         } catch (error) {
             alert(error.response?.data?.message || 'Error adding medicines');
@@ -239,6 +248,17 @@ const PharmacyDashboard = () => {
 
                     {isBulkMode ? (
                         <div className="space-y-4">
+                            <div className="mb-4">
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Select Supplier for Batch</label>
+                                <select
+                                    value={bulkSupplier}
+                                    onChange={(e) => setBulkSupplier(e.target.value)}
+                                    className="w-full md:w-1/2 p-2 border rounded focus:ring-2 focus:ring-blue-500"
+                                >
+                                    <option value="">-- Select Supplier --</option>
+                                    {suppliers.map(s => <option key={s._id} value={s._id}>{s.name}</option>)}
+                                </select>
+                            </div>
                             <div className="overflow-x-auto">
                                 <table className="w-full text-sm">
                                     <thead>
@@ -249,7 +269,6 @@ const PharmacyDashboard = () => {
                                             <th className="p-2">MRP</th>
                                             <th className="p-2">Cost</th>
                                             <th className="p-2">Qty</th>
-                                            <th className="p-2">Supplier</th>
                                             <th className="p-2">Action</th>
                                         </tr>
                                     </thead>
@@ -262,12 +281,7 @@ const PharmacyDashboard = () => {
                                                 <td className="p-1"><input name="mrp" type="number" value={row.mrp} onChange={(e) => handleBulkChange(index, e)} className="w-16 border p-1 rounded" placeholder="MRP" /></td>
                                                 <td className="p-1"><input name="supplierPrice" type="number" value={row.supplierPrice} onChange={(e) => handleBulkChange(index, e)} className="w-16 border p-1 rounded" placeholder="Cost" /></td>
                                                 <td className="p-1"><input name="quantity" type="number" value={row.quantity} onChange={(e) => handleBulkChange(index, e)} className="w-16 border p-1 rounded" placeholder="Qty" /></td>
-                                                <td className="p-1">
-                                                    <select name="supplier" value={row.supplier} onChange={(e) => handleBulkChange(index, e)} className="w-24 border p-1 rounded">
-                                                        <option value="">Select</option>
-                                                        {suppliers.map(s => <option key={s._id} value={s._id}>{s.name}</option>)}
-                                                    </select>
-                                                </td>
+
                                                 <td className="p-1">
                                                     {bulkData.length > 1 && (
                                                         <button onClick={() => handleRemoveRow(index)} className="text-red-500 hover:text-red-700 font-bold">X</button>
