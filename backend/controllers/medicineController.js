@@ -2,6 +2,7 @@ const asyncHandler = require('express-async-handler');
 const Medicine = require('../models/Medicine');
 const User = require('../models/User');
 const SupplierLedger = require('../models/SupplierLedger');
+const Purchase = require('../models/Purchase');
 
 // @desc    Add a new medicine
 // @route   POST /api/medicines
@@ -35,6 +36,21 @@ const addMedicine = asyncHandler(async (req, res) => {
     });
 
     if (medicine) {
+        // Add to permanent Purchase records for Invoice viewing
+        if (invoiceNumber && supplier) {
+            await Purchase.create({
+                pharmacyId: req.user.pharmacyId,
+                supplier,
+                invoiceNumber,
+                name,
+                batchNumber,
+                expiryDate,
+                mrp,
+                supplierPrice,
+                quantity
+            });
+        }
+
         // Add to Supplier Ledger as a Purchase
         if (supplier) {
             await SupplierLedger.create({
@@ -73,8 +89,22 @@ const addBulkMedicines = asyncHandler(async (req, res) => {
     try {
         const medicines = await Medicine.insertMany(processedMedicines);
 
-        // Add to Supplier Ledger for each medicine if supplier exists
+        // Add to Purchase records and Supplier Ledger
         for (const med of medicines) {
+            if (med.invoiceNumber && med.supplier) {
+                await Purchase.create({
+                    pharmacyId: req.user.pharmacyId,
+                    supplier: med.supplier,
+                    invoiceNumber: med.invoiceNumber,
+                    name: med.name,
+                    batchNumber: med.batchNumber,
+                    expiryDate: med.expiryDate,
+                    mrp: med.mrp,
+                    supplierPrice: med.supplierPrice,
+                    quantity: med.quantity
+                });
+            }
+
             if (med.supplier) {
                 await SupplierLedger.create({
                     pharmacyId: req.user.pharmacyId,
@@ -158,12 +188,10 @@ const deleteMedicine = asyncHandler(async (req, res) => {
 // @access  Pharmacy Admin
 const getInvoicesBySupplier = asyncHandler(async (req, res) => {
     const { supplierId } = req.params;
-    // Find all medicines for this supplier and return distinct invoice numbers
-    // Filter out null/empty invoice numbers
-    const invoices = await Medicine.find({
+    // Find unique invoice numbers from permanent Purchase records
+    const invoices = await Purchase.find({
         pharmacyId: req.user.pharmacyId,
-        supplier: supplierId,
-        invoiceNumber: { $ne: null, $ne: "" }
+        supplier: supplierId
     }).distinct('invoiceNumber');
 
     res.json(invoices);
@@ -174,12 +202,13 @@ const getInvoicesBySupplier = asyncHandler(async (req, res) => {
 // @access  Pharmacy Admin
 const getItemsByInvoice = asyncHandler(async (req, res) => {
     const { supplierId, invoiceNumber } = req.params;
-    const items = await Medicine.find({
+    const items = await Purchase.find({
         pharmacyId: req.user.pharmacyId,
         supplier: supplierId,
         invoiceNumber
-    });
+    }).sort({ createdAt: -1 });
     res.json(items);
 });
 
 module.exports = { addMedicine, addBulkMedicines, getMedicines, updateMedicine, deleteMedicine, getInvoicesBySupplier, getItemsByInvoice };
+
