@@ -35,23 +35,38 @@ const addCustomer = asyncHandler(async (req, res) => {
     res.status(201).json(customer);
 });
 
+const CustomerLedger = require('../models/CustomerLedger');
+
 // @desc    Get all customers for a pharmacy
 // @route   GET /api/customers
 // @access  Pharmacy Admin
 const getCustomers = asyncHandler(async (req, res) => {
     const customers = await Customer.find({ pharmacyId: req.user.pharmacyId });
 
-    // For each customer, calculate total due from Bills
-    // This is expensive if there are many customers, but let's start simple
+    // For each customer, calculate total due from Bills AND Manual Transactions
     const customersWithDue = await Promise.all(customers.map(async (c) => {
+        // Bills Balance
         const bills = await Bill.find({
             pharmacyId: req.user.pharmacyId,
             customerMobile: c.mobile
         });
-        const totalDue = bills.reduce((acc, bill) => acc + (bill.balanceAmount || 0), 0);
+        const billsDue = bills.reduce((acc, bill) => acc + (bill.balanceAmount || 0), 0);
+
+        // Manual Transactions
+        const transactions = await CustomerLedger.find({
+            customerId: c._id,
+            pharmacyId: req.user.pharmacyId
+        });
+
+        const manualDue = transactions.reduce((acc, t) => {
+            if (t.type === 'Credit') return acc + t.amount;
+            if (t.type === 'Payment') return acc - t.amount;
+            return acc;
+        }, 0);
+
         return {
             ...c._doc,
-            totalDue
+            totalDue: billsDue + manualDue
         };
     }));
 

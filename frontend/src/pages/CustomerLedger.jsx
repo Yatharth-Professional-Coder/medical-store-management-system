@@ -6,10 +6,12 @@ const CustomerLedger = () => {
     const [customers, setCustomers] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedCustomer, setSelectedCustomer] = useState(null);
-    const [bills, setBills] = useState([]);
+    const [transactions, setTransactions] = useState([]);
     const [loading, setLoading] = useState(false);
     const [showAddForm, setShowAddForm] = useState(false);
+    const [showTransactionForm, setShowTransactionForm] = useState(false);
     const [newCustomer, setNewCustomer] = useState({ name: '', mobile: '' });
+    const [manualEntry, setManualEntry] = useState({ type: 'Credit', amount: '', description: '', date: new Date().toISOString().split('T')[0] });
 
     useEffect(() => {
         fetchCustomers();
@@ -47,12 +49,53 @@ const CustomerLedger = () => {
         setSelectedCustomer(customer);
         setLoading(true);
         try {
-            const { data } = await api.get(`/bills/customer/${customer.mobile}`);
-            setBills(data);
+            // Fetch Bills
+            const { data: bills } = await api.get(`/bills/customer/${customer.mobile}`);
+            // Fetch Manual Transactions
+            const { data: manual } = await api.get(`/customers/${customer._id}/transactions`);
+
+            // Combine and format
+            const combined = [
+                ...bills.map(b => ({
+                    ...b,
+                    entryType: 'Bill',
+                    displayType: 'Sales Credit',
+                    displayAmount: b.balanceAmount,
+                    displayDetails: b.items.map(i => i.name).join(', '),
+                    date: b.createdAt
+                })),
+                ...manual.map(m => ({
+                    ...m,
+                    entryType: 'Manual',
+                    displayType: m.type === 'Credit' ? 'Manual Credit' : 'Payment Received',
+                    displayAmount: m.amount,
+                    displayDetails: m.description || 'N/A',
+                    date: m.date
+                }))
+            ].sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            setTransactions(combined);
         } catch (error) {
             alert('Error fetching history');
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleAddManualEntry = async (e) => {
+        e.preventDefault();
+        try {
+            await api.post('/customers/transaction', {
+                customerId: selectedCustomer._id,
+                ...manualEntry
+            });
+            alert('Transaction recorded!');
+            setManualEntry({ type: 'Credit', amount: '', description: '', date: new Date().toISOString().split('T')[0] });
+            setShowTransactionForm(false);
+            viewCustomerDetails(selectedCustomer);
+            fetchCustomers(); // Refresh balances
+        } catch (error) {
+            alert(error.response?.data?.message || 'Error recording transaction');
         }
     };
 
@@ -202,18 +245,77 @@ const CustomerLedger = () => {
                                         </div>
                                     </div>
                                 </div>
-                                <div className="bg-red-500/10 border border-red-500/20 p-6 rounded-2xl text-right backdrop-blur-sm">
-                                    <p className="text-[10px] uppercase font-black tracking-[0.2em] text-red-400 mb-1">Current OS Balance</p>
-                                    <p className="text-4xl font-black text-red-500">₹{selectedCustomer.totalDue.toFixed(2)}</p>
+                                <div className="bg-white/10 px-6 py-4 rounded-2xl border border-white/20 text-center backdrop-blur-sm">
+                                    <p className="text-[10px] uppercase font-black tracking-[0.2em] text-gray-300 mb-1">Live OS Balance</p>
+                                    <p className={`text-4xl font-black ${selectedCustomer.totalDue > 0 ? 'text-red-400' : 'text-green-400'}`}>₹{selectedCustomer.totalDue.toFixed(2)}</p>
                                 </div>
                             </div>
 
                             {/* Content */}
                             <div className="p-8 flex-1 overflow-y-auto">
-                                <h3 className="text-lg font-black text-gray-800 mb-6 flex items-center">
-                                    <svg className="w-5 h-5 mr-2 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                                    Credit Transaction Logs
-                                </h3>
+                                <div className="flex justify-between items-center mb-6">
+                                    <h3 className="text-lg font-black text-gray-800 flex items-center">
+                                        <svg className="w-5 h-5 mr-2 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                        Unified Ledger (Manual + Bills)
+                                    </h3>
+                                    <button
+                                        onClick={() => setShowTransactionForm(!showTransactionForm)}
+                                        className="bg-gray-100 text-gray-800 px-4 py-2 rounded-xl text-xs font-black hover:bg-gray-200 transition-all border border-gray-200"
+                                    >
+                                        {showTransactionForm ? 'Cancel Entry' : '+ Manual Entry'}
+                                    </button>
+                                </div>
+
+                                {showTransactionForm && (
+                                    <form onSubmit={handleAddManualEntry} className="bg-gray-50 p-6 rounded-2xl border-2 border-gray-100 mb-8 animate-in zoom-in duration-200 grid grid-cols-2 md:grid-cols-4 gap-4 items-end">
+                                        <div className="col-span-1 space-y-1">
+                                            <label className="text-[10px] uppercase font-black text-gray-400 ml-1">Type</label>
+                                            <select
+                                                value={manualEntry.type}
+                                                onChange={(e) => setManualEntry({ ...manualEntry, type: e.target.value })}
+                                                className="w-full p-3 bg-white border-0 rounded-xl font-bold shadow-sm focus:ring-2 focus:ring-blue-500"
+                                            >
+                                                <option value="Credit">Credit (Debit Customer)</option>
+                                                <option value="Payment">Payment (Credit Customer)</option>
+                                            </select>
+                                        </div>
+                                        <div className="col-span-1 space-y-1">
+                                            <label className="text-[10px] uppercase font-black text-gray-400 ml-1">Amount</label>
+                                            <input
+                                                type="number"
+                                                placeholder="₹ 0.00"
+                                                value={manualEntry.amount}
+                                                onChange={(e) => setManualEntry({ ...manualEntry, amount: e.target.value })}
+                                                className="w-full p-3 bg-white border-0 rounded-xl font-bold shadow-sm focus:ring-2 focus:ring-blue-500"
+                                                required
+                                            />
+                                        </div>
+                                        <div className="col-span-2 space-y-1">
+                                            <label className="text-[10px] uppercase font-black text-gray-400 ml-1">Description</label>
+                                            <input
+                                                type="text"
+                                                placeholder="e.g. Received cash at counter"
+                                                value={manualEntry.description}
+                                                onChange={(e) => setManualEntry({ ...manualEntry, description: e.target.value })}
+                                                className="w-full p-3 bg-white border-0 rounded-xl font-bold shadow-sm focus:ring-2 focus:ring-blue-500"
+                                            />
+                                        </div>
+                                        <div className="col-span-2 space-y-1">
+                                            <label className="text-[10px] uppercase font-black text-gray-400 ml-1">Transaction Date</label>
+                                            <input
+                                                type="date"
+                                                value={manualEntry.date}
+                                                onChange={(e) => setManualEntry({ ...manualEntry, date: e.target.value })}
+                                                className="w-full p-3 bg-white border-0 rounded-xl font-bold shadow-sm focus:ring-2 focus:ring-blue-500"
+                                            />
+                                        </div>
+                                        <div className="col-span-2">
+                                            <button type="submit" className="w-full bg-blue-600 text-white py-3.5 rounded-xl font-black hover:bg-blue-700 shadow-xl shadow-blue-100 uppercase tracking-wider text-xs">
+                                                Post Transaction
+                                            </button>
+                                        </div>
+                                    </form>
+                                )}
 
                                 {loading ? (
                                     <div className="flex justify-center items-center py-20">
@@ -221,46 +323,43 @@ const CustomerLedger = () => {
                                     </div>
                                 ) : (
                                     <div className="space-y-4">
-                                        {bills.length === 0 && (
+                                        {transactions.length === 0 && (
                                             <div className="py-20 text-center text-gray-400 font-medium italic">
-                                                No credit instances found on this card.
+                                                No transactions recorded on this card.
                                             </div>
                                         )}
-                                        {bills.map(bill => (
-                                            <div key={bill._id} className="group bg-white border border-gray-100 rounded-2xl p-5 hover:shadow-lg hover:border-blue-100 transition-all flex items-center justify-between">
+                                        {transactions.map((entry, idx) => (
+                                            <div key={idx} className={`group bg-white border border-gray-100 rounded-2xl p-5 hover:shadow-lg transition-all flex items-center justify-between ${entry.entryType === 'Manual' ? 'border-l-4 border-l-blue-400' : ''}`}>
                                                 <div className="flex items-center space-x-5">
                                                     <div className="flex flex-col items-center justify-center w-14 h-14 bg-gray-50 rounded-xl group-hover:bg-blue-50 transition-colors">
-                                                        <span className="text-xs font-black text-gray-400 group-hover:text-blue-400 uppercase">{new Date(bill.createdAt).toLocaleDateString(undefined, { month: 'short' })}</span>
-                                                        <span className="text-xl font-black text-gray-900 leading-none">{new Date(bill.createdAt).getDate()}</span>
+                                                        <span className="text-xs font-black text-gray-400 group-hover:text-blue-400 uppercase">{new Date(entry.date).toLocaleDateString(undefined, { month: 'short' })}</span>
+                                                        <span className="text-xl font-black text-gray-900 leading-none">{new Date(entry.date).getDate()}</span>
                                                     </div>
                                                     <div>
                                                         <div className="flex items-center space-x-2">
-                                                            <span className={`w-2 h-2 rounded-full ${bill.paymentStatus === 'Paid' ? 'bg-green-500' : 'bg-red-500'}`}></span>
-                                                            <h4 className="font-bold text-gray-800 truncate max-w-xs">{bill.items.map(i => i.name).join(', ')}</h4>
+                                                            <span className={`w-2 h-2 rounded-full ${entry.displayType.includes('Payment') ? 'bg-green-500' : 'bg-red-500'}`}></span>
+                                                            <h4 className="font-bold text-gray-800 truncate max-w-xs">{entry.displayDetails}</h4>
                                                         </div>
-                                                        <p className="text-xs font-bold text-gray-400 mt-1 uppercase">Bill #{bill._id.slice(-6)} • Trackable Credit</p>
+                                                        <p className="text-xs font-bold text-gray-400 mt-1 uppercase">
+                                                            {entry.entryType} • {entry.displayType}
+                                                        </p>
                                                     </div>
                                                 </div>
 
                                                 <div className="flex items-center space-x-8 text-right">
-                                                    <div className="space-y-1">
-                                                        <p className="text-[10px] font-black text-gray-300 uppercase leading-none">Status</p>
-                                                        <span className={`inline-block px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${bill.paymentStatus === 'Paid' ? 'bg-green-100 text-green-700' : 'bg-red-50 text-red-600'
-                                                            }`}>
-                                                            {bill.paymentStatus}
-                                                        </span>
-                                                    </div>
                                                     <div className="space-y-1 w-24">
-                                                        <p className="text-[10px] font-black text-gray-300 uppercase leading-none">Net Balance</p>
-                                                        <p className="text-lg font-black text-red-600">₹{bill.balanceAmount}</p>
+                                                        <p className="text-[10px] font-black text-gray-300 uppercase leading-none">Net Amount</p>
+                                                        <p className={`text-lg font-black ${entry.displayType.includes('Payment') ? 'text-green-600' : 'text-red-600'}`}>
+                                                            {entry.displayType.includes('Payment') ? '-' : ''}₹{entry.displayAmount}
+                                                        </p>
                                                     </div>
                                                     <div>
-                                                        {bill.paymentStatus !== 'Paid' && (
+                                                        {entry.entryType === 'Bill' && entry.paymentStatus !== 'Paid' && (
                                                             <button
-                                                                onClick={() => handleSettle(bill._id, bill.balanceAmount)}
+                                                                onClick={() => handleSettle(entry._id, entry.displayAmount)}
                                                                 className="bg-gray-900 text-white px-5 py-2.5 rounded-xl text-xs font-black hover:bg-blue-600 shadow-sm transition-all active:scale-95"
                                                             >
-                                                                SETTLE
+                                                                SETTLE BILL
                                                             </button>
                                                         )}
                                                     </div>
