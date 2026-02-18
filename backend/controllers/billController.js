@@ -40,14 +40,14 @@ const createBill = asyncHandler(async (req, res) => {
             throw new Error(`Unauthorized access to medicine: ${item.name}`);
         }
 
-        if (medicine.stock < item.quantity) {
+        if (medicine.quantity < item.quantity) {
             res.status(400);
-            throw new Error(`Insufficient stock for ${item.name}. Available: ${medicine.stock}`);
+            throw new Error(`Insufficient stock for ${item.name}. Available: ${medicine.quantity}`);
         }
 
         // Add to bulk update operations
-        // We decrement the stock for this specific medicine
-        medicine.stock = medicine.stock - item.quantity;
+        // We decrement the quantity for this specific medicine
+        medicine.quantity = medicine.quantity - item.quantity;
         await medicine.save();
     }
 
@@ -89,7 +89,7 @@ const deleteBill = asyncHandler(async (req, res) => {
         for (const item of bill.items) {
             const medicine = await Medicine.findById(item.medicineId);
             if (medicine) {
-                medicine.stock = medicine.stock + item.quantity;
+                medicine.quantity = medicine.quantity + item.quantity;
                 await medicine.save();
             }
         }
