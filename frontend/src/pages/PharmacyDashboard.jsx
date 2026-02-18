@@ -99,7 +99,8 @@ const PharmacyDashboard = () => {
             name: medicine.name,
             batchNumber: medicine.batchNumber,
             expiryDate: formattedDate,
-            price: medicine.price,
+            mrp: medicine.mrp,
+            supplierPrice: medicine.supplierPrice,
             quantity: medicine.quantity,
             supplier: medicine.supplier || '',
             minStockLevel: medicine.minStockLevel || ''
@@ -109,7 +110,7 @@ const PharmacyDashboard = () => {
 
     const handleCancelEdit = () => {
         setEditId(null);
-        setFormData({ name: '', batchNumber: '', expiryDate: '', price: '', quantity: '', supplier: '', minStockLevel: '' });
+        setFormData({ name: '', batchNumber: '', expiryDate: '', mrp: '', supplierPrice: '', quantity: '', supplier: '', minStockLevel: '' });
     };
 
     const handleDelete = async (id) => {
@@ -175,6 +176,9 @@ const PharmacyDashboard = () => {
                     </Link>
                     <Link to="/sales-history" className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 font-bold shadow">
                         Sales History
+                    </Link>
+                    <Link to="/suppliers" className="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 font-bold shadow">
+                        Manage Suppliers
                     </Link>
                     <button onClick={handleLogout} className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">Logout</button>
                 </div>
@@ -256,7 +260,8 @@ const PharmacyDashboard = () => {
                                     <th className="px-4 py-2">Name</th>
                                     <th className="px-4 py-2">Batch</th>
                                     <th className="px-4 py-2">Expiry</th>
-                                    <th className="px-4 py-2">Price</th>
+                                    <th className="px-4 py-2">MRP</th>
+                                    <th className="px-4 py-2">Cost</th>
                                     <th className="px-4 py-2">Qty</th>
                                     <th className="px-4 py-2">Actions</th>
                                 </tr>
@@ -282,7 +287,8 @@ const PharmacyDashboard = () => {
                                                 {new Date(item.expiryDate).toLocaleDateString()}
                                                 <div className="text-xs text-gray-500">{daysToExpiry} days left</div>
                                             </td>
-                                            <td className="px-4 py-2">₹{item.price}</td>
+                                            <td className="px-4 py-2">₹{item.mrp}</td>
+                                            <td className="px-4 py-2 text-gray-500">₹{item.supplierPrice}</td>
                                             <td className="px-4 py-2 font-bold">{item.quantity}</td>
                                             <td className="px-4 py-2 space-x-2">
                                                 <button onClick={() => handleEdit(item)} className="text-blue-600 hover:text-blue-800">Edit</button>
