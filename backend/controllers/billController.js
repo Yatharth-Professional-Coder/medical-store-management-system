@@ -1,6 +1,7 @@
 const asyncHandler = require('express-async-handler');
 const Bill = require('../models/Bill');
 const Medicine = require('../models/Medicine');
+const mongoose = require('mongoose');
 
 // @desc    Create a new bill and update stock
 // @route   POST /api/bills
