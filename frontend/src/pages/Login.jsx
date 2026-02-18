@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import api from '../api/axios';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 
 const Login = () => {
     const [email, setEmail] = useState('');
@@ -50,6 +50,9 @@ const Login = () => {
                     Login
                 </button>
             </form>
+            <div className="mt-4 text-center absolute bottom-10">
+                <Link to="/register" className="text-blue-500 hover:underline">Register as Pharmacy</Link>
+            </div>
         </div>
     );
 };

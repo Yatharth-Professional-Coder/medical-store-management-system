@@ -2,12 +2,14 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Login from './pages/Login';
 import SuperAdminDashboard from './pages/SuperAdminDashboard';
 import PharmacyDashboard from './pages/PharmacyDashboard';
+import RegisterPharmacy from './pages/RegisterPharmacy';
 
 function App() {
   return (
     <Router>
       <Routes>
         <Route path="/" element={<Login />} />
+        <Route path="/register" element={<RegisterPharmacy />} />
         <Route path="/super-admin" element={<SuperAdminDashboard />} />
         <Route path="/pharmacy-admin" element={<PharmacyDashboard />} />
       </Routes>

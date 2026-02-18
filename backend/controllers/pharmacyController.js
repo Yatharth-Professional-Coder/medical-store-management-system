@@ -46,7 +46,8 @@ const createPharmacy = asyncHandler(async (req, res) => {
             address,
             licenseNumber,
             contactNumber,
-            owner: user._id
+            owner: user._id,
+            status: req.body.status || 'Pending'
         });
 
         if (pharmacy) {
@@ -73,6 +74,85 @@ const createPharmacy = asyncHandler(async (req, res) => {
     } else {
         res.status(400);
         throw new Error('Invalid user data');
+    }
+});
+
+// @desc    Register a new pharmacy (Public)
+// @route   POST /api/pharmacies/register
+// @access  Public
+const registerPharmacy = asyncHandler(async (req, res) => {
+    const {
+        adminName,
+        adminEmail,
+        adminPassword,
+        pharmacyName,
+        address,
+        licenseNumber,
+        contactNumber
+    } = req.body;
+
+    const userExists = await User.findOne({ email: adminEmail });
+    if (userExists) {
+        res.status(400);
+        throw new Error('User (Admin) already exists');
+    }
+
+    const pharmacyExists = await Pharmacy.findOne({ licenseNumber });
+    if (pharmacyExists) {
+        res.status(400);
+        throw new Error('Pharmacy with this license already exists');
+    }
+
+    const user = await User.create({
+        name: adminName,
+        email: adminEmail,
+        password: adminPassword,
+        role: 'PharmacyAdmin'
+    });
+
+    if (user) {
+        const pharmacy = await Pharmacy.create({
+            name: pharmacyName,
+            address,
+            licenseNumber,
+            contactNumber,
+            owner: user._id,
+            status: 'Pending' // Explicitly set to Pending
+        });
+
+        if (pharmacy) {
+            user.pharmacyId = pharmacy._id;
+            await user.save();
+
+            res.status(201).json({
+                message: 'Registration successful. Please wait for Super Admin approval.',
+                pharmacy
+            });
+        } else {
+            await User.findByIdAndDelete(user._id);
+            res.status(400);
+            throw new Error('Invalid pharmacy data');
+        }
+    } else {
+        res.status(400);
+        throw new Error('Invalid user data');
+    }
+});
+
+// @desc    Update pharmacy status
+// @route   PUT /api/pharmacies/:id/status
+// @access  Super Admin
+const updatePharmacyStatus = asyncHandler(async (req, res) => {
+    const { status } = req.body;
+    const pharmacy = await Pharmacy.findById(req.params.id);
+
+    if (pharmacy) {
+        pharmacy.status = status;
+        const updatedPharmacy = await pharmacy.save();
+        res.json(updatedPharmacy);
+    } else {
+        res.status(404);
+        throw new Error('Pharmacy not found');
     }
 });
 
@@ -103,4 +183,4 @@ const deletePharmacy = asyncHandler(async (req, res) => {
     }
 });
 
-module.exports = { createPharmacy, getPharmacies, deletePharmacy };
+module.exports = { createPharmacy, getPharmacies, deletePharmacy, registerPharmacy, updatePharmacyStatus };

@@ -1,5 +1,6 @@
 const asyncHandler = require('express-async-handler');
 const User = require('../models/User');
+const Pharmacy = require('../models/Pharmacy');
 const generateToken = require('../utils/generateToken');
 
 // @desc    Auth user & get token
@@ -11,6 +12,15 @@ const authUser = asyncHandler(async (req, res) => {
     const user = await User.findOne({ email });
 
     if (user && (await user.matchPassword(password))) {
+        // Check if pharmacy is approved
+        if (user.role === 'PharmacyAdmin' || user.role === 'PharmacyStaff') {
+            const pharmacy = await Pharmacy.findById(user.pharmacyId);
+            if (pharmacy && pharmacy.status !== 'Approved') {
+                res.status(401);
+                throw new Error(`Your account is ${pharmacy.status}. Please contact Super Admin.`);
+            }
+        }
+
         res.json({
             _id: user._id,
             name: user.name,
