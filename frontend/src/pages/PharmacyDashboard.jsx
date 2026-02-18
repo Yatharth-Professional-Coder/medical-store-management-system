@@ -55,16 +55,46 @@ const PharmacyDashboard = () => {
         return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     };
 
+    const [editId, setEditId] = useState(null);
+
+    // ... (fetchSuggestions, handleChange, getDaysToExpiry same as before)
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            await api.post('/medicines', formData);
+            if (editId) {
+                await api.put(`/medicines/${editId}`, formData);
+                alert('Medicine Updated');
+                setEditId(null);
+            } else {
+                await api.post('/medicines', formData);
+                alert('Medicine Added');
+            }
             fetchMedicines();
             setFormData({ name: '', batchNumber: '', expiryDate: '', price: '', quantity: '', supplier: '', minStockLevel: '' });
-            alert('Medicine Added');
         } catch (error) {
-            alert(error.response?.data?.message || 'Error adding medicine');
+            alert(error.response?.data?.message || 'Error saving medicine');
         }
+    };
+
+    const handleEdit = (medicine) => {
+        setEditId(medicine._id);
+        const formattedDate = new Date(medicine.expiryDate).toISOString().split('T')[0];
+        setFormData({
+            name: medicine.name,
+            batchNumber: medicine.batchNumber,
+            expiryDate: formattedDate,
+            price: medicine.price,
+            quantity: medicine.quantity,
+            supplier: medicine.supplier || '',
+            minStockLevel: medicine.minStockLevel || ''
+        });
+        window.scrollTo(0, 0); // Scroll to form
+    };
+
+    const handleCancelEdit = () => {
+        setEditId(null);
+        setFormData({ name: '', batchNumber: '', expiryDate: '', price: '', quantity: '', supplier: '', minStockLevel: '' });
     };
 
     const handleDelete = async (id) => {
@@ -115,7 +145,7 @@ const PharmacyDashboard = () => {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* Inventory Form */}
                 <div className="bg-white p-6 rounded-lg shadow-md h-fit">
-                    <h2 className="text-xl font-bold mb-4 border-b pb-2">Add Medicine</h2>
+                    <h2 className="text-xl font-bold mb-4 border-b pb-2">{editId ? 'Edit Medicine' : 'Add Medicine'}</h2>
                     <form onSubmit={handleSubmit} className="space-y-3">
                         <input
                             name="name"
@@ -142,7 +172,17 @@ const PharmacyDashboard = () => {
                         <label className="block text-sm text-gray-600">Expiry Date</label>
                         <input name="expiryDate" type="date" value={formData.expiryDate} onChange={handleChange} className="w-full p-2 border rounded" required />
                         <input name="supplier" placeholder="Supplier" value={formData.supplier} onChange={handleChange} className="w-full p-2 border rounded" />
-                        <button type="submit" className="w-full bg-green-600 text-white p-2 rounded hover:bg-green-700 font-semibold">Add to Inventory</button>
+
+                        <div className="flex gap-2">
+                            <button type="submit" className={`w-full text-white p-2 rounded font-semibold ${editId ? 'bg-blue-600 hover:bg-blue-700' : 'bg-green-600 hover:bg-green-700'}`}>
+                                {editId ? 'Update Medicine' : 'Add to Inventory'}
+                            </button>
+                            {editId && (
+                                <button type="button" onClick={handleCancelEdit} className="w-1/3 bg-gray-500 text-white p-2 rounded hover:bg-gray-600 font-semibold">
+                                    Cancel
+                                </button>
+                            )}
+                        </div>
                     </form>
                 </div>
 
@@ -194,7 +234,8 @@ const PharmacyDashboard = () => {
                                             </td>
                                             <td className="px-4 py-2">₹{item.price}</td>
                                             <td className="px-4 py-2 font-bold">{item.quantity}</td>
-                                            <td className="px-4 py-2">
+                                            <td className="px-4 py-2 space-x-2">
+                                                <button onClick={() => handleEdit(item)} className="text-blue-600 hover:text-blue-800">Edit</button>
                                                 <button onClick={() => handleDelete(item._id)} className="text-red-600 hover:text-red-800">Delete</button>
                                             </td>
                                         </tr>

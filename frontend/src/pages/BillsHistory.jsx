@@ -18,6 +18,19 @@ const BillsHistory = () => {
         }
     };
 
+    const handleDelete = async (id) => {
+        if (window.confirm('Are you sure you want to delete this bill? Stock will be restored.')) {
+            try {
+                await api.delete(`/bills/${id}`);
+                fetchBills();
+                setSelectedBill(null);
+                alert('Bill deleted and stock restored.');
+            } catch (error) {
+                alert(error.response?.data?.message || 'Error deleting bill');
+            }
+        }
+    };
+
     return (
         <div className="p-8 h-screen overflow-y-auto">
             <h1 className="text-3xl font-bold mb-6">Sales History</h1>
@@ -49,12 +62,18 @@ const BillsHistory = () => {
                                 <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">
                                     ₹{bill.totalAmount}
                                 </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
                                     <button
                                         onClick={() => setSelectedBill(bill)}
                                         className="text-blue-600 hover:text-blue-900"
                                     >
-                                        View Details
+                                        View
+                                    </button>
+                                    <button
+                                        onClick={() => handleDelete(bill._id)}
+                                        className="text-red-600 hover:text-red-900"
+                                    >
+                                        Delete
                                     </button>
                                 </td>
                             </tr>

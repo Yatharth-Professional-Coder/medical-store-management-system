@@ -76,4 +76,30 @@ const getBills = asyncHandler(async (req, res) => {
     res.json(bills);
 });
 
-module.exports = { createBill, getBills };
+const deleteBill = asyncHandler(async (req, res) => {
+    const bill = await Bill.findById(req.params.id);
+
+    if (bill) {
+        if (bill.pharmacyId.toString() !== req.user.pharmacyId.toString()) {
+            res.status(401);
+            throw new Error('Not authorized to delete this bill');
+        }
+
+        // Restore Stock for each item
+        for (const item of bill.items) {
+            const medicine = await Medicine.findById(item.medicineId);
+            if (medicine) {
+                medicine.stock = medicine.stock + item.quantity;
+                await medicine.save();
+            }
+        }
+
+        await bill.deleteOne();
+        res.json({ message: 'Bill removed and stock restored' });
+    } else {
+        res.status(404);
+        throw new Error('Bill not found');
+    }
+});
+
+module.exports = { createBill, getBills, deleteBill };
