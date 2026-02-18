@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import api from '../api/axios';
 
 const BillsHistory = () => {
@@ -33,6 +34,7 @@ const BillsHistory = () => {
 
     return (
         <div className="p-8 h-screen overflow-y-auto">
+            <Link to="/pharmacy-admin" className="text-gray-600 hover:text-gray-900 mb-4 inline-block font-bold">&larr; Back to Dashboard</Link>
             <h1 className="text-3xl font-bold mb-6">Sales History</h1>
 
             <div className="bg-white rounded-lg shadow overflow-hidden">

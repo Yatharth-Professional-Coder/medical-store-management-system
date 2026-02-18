@@ -54,6 +54,7 @@ const SupplierManagement = () => {
 
     return (
         <div className="p-8 bg-gray-100 min-h-screen">
+            <Link to="/pharmacy-admin" className="text-gray-600 hover:text-gray-900 mb-4 inline-block font-bold">&larr; Back to Dashboard</Link>
             <div className="flex justify-between items-center mb-6">
                 <h1 className="text-3xl font-bold text-gray-800">Supplier Management</h1>
                 <Link to="/supplier-ledger" className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 font-bold shadow">

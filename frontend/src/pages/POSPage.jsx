@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import api from '../api/axios';
+import { Link } from 'react-router-dom';
 
 const POSPage = () => {
     const [medicines, setMedicines] = useState([]);
@@ -120,6 +121,7 @@ const POSPage = () => {
         <div className="flex h-screen bg-gray-100">
             {/* Left: Product Selection */}
             <div className="w-2/3 p-6 overflow-y-auto">
+                <Link to="/pharmacy-admin" className="text-gray-600 hover:text-gray-900 mb-4 inline-block font-bold">&larr; Back to Dashboard</Link>
                 <h1 className="text-2xl font-bold mb-4">Point of Sale</h1>
                 <input
                     type="text"

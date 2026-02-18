@@ -25,7 +25,8 @@ const RegisterPharmacy = () => {
 
     return (
         <div className="flex justify-center items-center min-h-screen bg-gray-100 p-4">
-            <div className="bg-white p-8 rounded shadow-md w-full max-w-lg">
+            <div className="bg-white p-8 rounded shadow-md w-full max-w-lg relative">
+                <Link to="/" className="absolute top-4 left-4 text-gray-500 hover:text-gray-700">&larr; Back</Link>
                 <h2 className="text-2xl mb-6 font-bold text-center text-blue-800">Register Pharmacy</h2>
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <input name="pharmacyName" placeholder="Pharmacy Name" value={formData.pharmacyName} onChange={handleChange} className="w-full p-2 border rounded" required />

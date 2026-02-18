@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import api from '../api/axios';
 
 const CustomerLedger = () => {
@@ -37,6 +38,7 @@ const CustomerLedger = () => {
 
     return (
         <div className="p-8 bg-gray-50 min-h-screen">
+            <Link to="/pharmacy-admin" className="text-gray-600 hover:text-gray-900 mb-4 inline-block font-bold">&larr; Back to Dashboard</Link>
             <h1 className="text-3xl font-bold mb-6 text-gray-800">Customer Ledger (Udhaar)</h1>
 
             <div className="bg-white p-6 rounded-lg shadow-md mb-8">
@@ -91,8 +93,8 @@ const CustomerLedger = () => {
                                             <td className="p-3 text-right text-red-600 font-bold">₹{bill.balanceAmount}</td>
                                             <td className="p-3">
                                                 <span className={`px-2 py-1 rounded text-xs font-bold ${bill.paymentStatus === 'Paid' ? 'bg-green-100 text-green-800' :
-                                                        bill.paymentStatus === 'Unpaid' ? 'bg-red-100 text-red-800' :
-                                                            'bg-yellow-100 text-yellow-800'
+                                                    bill.paymentStatus === 'Unpaid' ? 'bg-red-100 text-red-800' :
+                                                        'bg-yellow-100 text-yellow-800'
                                                     }`}>
                                                     {bill.paymentStatus}
                                                 </span>

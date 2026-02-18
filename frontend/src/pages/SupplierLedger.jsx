@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import api from '../api/axios';
-import { useLocation } from 'react-router-dom';
+import { useLocation, Link } from 'react-router-dom';
 
 const SupplierLedger = () => {
     const location = useLocation();
@@ -76,6 +76,7 @@ const SupplierLedger = () => {
 
     return (
         <div className="p-8 bg-gray-50 min-h-screen">
+            <Link to="/suppliers" className="text-gray-600 hover:text-gray-900 mb-4 inline-block font-bold">&larr; Back to Suppliers</Link>
             <h1 className="text-3xl font-bold mb-6 text-gray-800">Supplier Ledger</h1>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
