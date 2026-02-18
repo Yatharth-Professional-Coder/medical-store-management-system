@@ -13,7 +13,7 @@ const supplierLedgerSchema = mongoose.Schema({
     },
     type: {
         type: String,
-        enum: ['Purchase', 'Payment'],
+        enum: ['Purchase', 'Payment', 'Return'],
         required: true
     },
     amount: {

@@ -1,6 +1,7 @@
 const asyncHandler = require('express-async-handler');
 const Return = require('../models/Return');
 const Medicine = require('../models/Medicine');
+const SupplierLedger = require('../models/SupplierLedger');
 
 // @desc    Return medicine to seller (remove from stock and log)
 // @route   POST /api/returns
@@ -38,6 +39,19 @@ const returnMedicine = asyncHandler(async (req, res) => {
         supplier: medicine.supplier,
         reason: reason || 'Expired'
     });
+
+    // Add cost credits to Supplier Ledger if supplier information exists
+    if (medicine.supplier) {
+        const totalCost = medicine.supplierPrice * quantity;
+        await SupplierLedger.create({
+            pharmacyId: req.user.pharmacyId,
+            supplierId: medicine.supplier,
+            type: 'Return',
+            amount: totalCost,
+            description: `Return: ${medicine.name} (Qty: ${quantity}, Batch: ${medicine.batchNumber})`,
+            date: new Date()
+        });
+    }
 
     res.status(201).json(returnRecord);
 });

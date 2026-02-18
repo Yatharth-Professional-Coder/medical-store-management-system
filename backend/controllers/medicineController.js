@@ -1,6 +1,7 @@
 const asyncHandler = require('express-async-handler');
 const Medicine = require('../models/Medicine');
 const User = require('../models/User');
+const SupplierLedger = require('../models/SupplierLedger');
 
 // @desc    Add a new medicine
 // @route   POST /api/medicines
@@ -34,6 +35,17 @@ const addMedicine = asyncHandler(async (req, res) => {
     });
 
     if (medicine) {
+        // Add to Supplier Ledger as a Purchase
+        if (supplier) {
+            await SupplierLedger.create({
+                pharmacyId: req.user.pharmacyId,
+                supplierId: supplier,
+                type: 'Purchase',
+                amount: supplierPrice * quantity,
+                description: `Purchase: ${name} (Batch: ${batchNumber}, Invoice: ${invoiceNumber || 'N/A'})`,
+                date: new Date()
+            });
+        }
         res.status(201).json(medicine);
     } else {
         res.status(400);
@@ -60,6 +72,21 @@ const addBulkMedicines = asyncHandler(async (req, res) => {
 
     try {
         const medicines = await Medicine.insertMany(processedMedicines);
+
+        // Add to Supplier Ledger for each medicine if supplier exists
+        for (const med of medicines) {
+            if (med.supplier) {
+                await SupplierLedger.create({
+                    pharmacyId: req.user.pharmacyId,
+                    supplierId: med.supplier,
+                    type: 'Purchase',
+                    amount: med.supplierPrice * med.quantity,
+                    description: `Bulk Purchase: ${med.name} (Batch: ${med.batchNumber}, Invoice: ${med.invoiceNumber || 'N/A'})`,
+                    date: new Date()
+                });
+            }
+        }
+
         res.status(201).json(medicines);
     } catch (error) {
         res.status(400);

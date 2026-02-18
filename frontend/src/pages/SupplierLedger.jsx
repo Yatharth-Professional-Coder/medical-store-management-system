@@ -69,9 +69,10 @@ const SupplierLedger = () => {
 
     // Calculate Net Balance
     // Purchase adds to balance (We owe them)
-    // Payment reduces balance (We paid them)
+    // Payment / Return reduces balance (We paid or returned stock)
     const netBalance = ledger.reduce((acc, entry) => {
-        return entry.type === 'Purchase' ? acc + entry.amount : acc - entry.amount;
+        if (entry.type === 'Purchase') return acc + entry.amount;
+        return acc - entry.amount; // Payment or Return
     }, 0);
 
     return (
@@ -154,7 +155,7 @@ const SupplierLedger = () => {
                             <div className="flex justify-between items-center mb-4">
                                 <h2 className="text-xl font-bold">Transaction History</h2>
                                 <div className={`px-4 py-2 rounded font-bold ${netBalance > 0 ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}`}>
-                                    Net Balance: ₹{Math.abs(netBalance)} {netBalance > 0 ? '(Due)' : '(Advance)'}
+                                    Net Balance: ₹{Math.abs(netBalance.toFixed(2))} {netBalance > 0 ? '(Due)' : '(Advance)'}
                                 </div>
                             </div>
                             <div className="overflow-x-auto">
@@ -164,8 +165,8 @@ const SupplierLedger = () => {
                                             <th className="p-3">Date</th>
                                             <th className="p-3">Description</th>
                                             <th className="p-3 text-center">Type</th>
-                                            <th className="p-3 text-right">Debit (Paid)</th>
-                                            <th className="p-3 text-right">Credit (item)</th>
+                                            <th className="p-3 text-right">Debit (Paid/Return)</th>
+                                            <th className="p-3 text-right">Credit (Purchase)</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -174,12 +175,15 @@ const SupplierLedger = () => {
                                                 <td className="p-3">{new Date(entry.date).toLocaleDateString()}</td>
                                                 <td className="p-3">{entry.description}</td>
                                                 <td className="p-3 text-center">
-                                                    <span className={`px-2 py-1 rounded text-xs font-bold ${entry.type === 'Payment' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                                                    <span className={`px-2 py-1 rounded text-xs font-bold ${entry.type === 'Payment' ? 'bg-green-100 text-green-800' :
+                                                            entry.type === 'Return' ? 'bg-orange-100 text-orange-800' :
+                                                                'bg-red-100 text-red-800'
+                                                        }`}>
                                                         {entry.type}
                                                     </span>
                                                 </td>
                                                 <td className="p-3 text-right font-medium text-green-600">
-                                                    {entry.type === 'Payment' ? `₹${entry.amount}` : '-'}
+                                                    {entry.type !== 'Purchase' ? `₹${entry.amount}` : '-'}
                                                 </td>
                                                 <td className="p-3 text-right font-medium text-red-600">
                                                     {entry.type === 'Purchase' ? `₹${entry.amount}` : '-'}
