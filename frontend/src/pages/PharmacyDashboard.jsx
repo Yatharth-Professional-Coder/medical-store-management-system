@@ -108,6 +108,46 @@ const PharmacyDashboard = () => {
         } catch (error) { alert(error.response?.data?.message || 'Error returning medicine'); }
     };
 
+    const handleBulkDataChange = (index, e) => {
+        const newData = [...bulkData];
+        newData[index][e.target.name] = e.target.name === 'name' ? e.target.value.toUpperCase() : e.target.value;
+        setBulkData(newData);
+    };
+
+    const handleAddBulkRow = () => {
+        setBulkData([...bulkData, { name: '', batchNumber: '', expiryDate: '', mrp: '', supplierPrice: '', quantity: '', minStockLevel: '' }]);
+    };
+
+    const handleRemoveBulkRow = (index) => {
+        if (bulkData.length > 1) {
+            setBulkData(bulkData.filter((_, i) => i !== index));
+        }
+    };
+
+    const handleBulkSubmit = async (e) => {
+        e.preventDefault();
+        try {
+            if (!bulkSupplier || !bulkInvoiceNumber) {
+                alert('Please select supplier and enter invoice number');
+                return;
+            }
+            const payload = bulkData.map(item => ({
+                ...item,
+                supplier: bulkSupplier,
+                invoiceNumber: bulkInvoiceNumber
+            }));
+            await api.post('/medicines/bulk', { medicines: payload });
+            alert('Bulk Medicines Added Successfully');
+            setIsBulkMode(false);
+            setBulkData([{ name: '', batchNumber: '', expiryDate: '', mrp: '', supplierPrice: '', quantity: '', minStockLevel: '' }]);
+            setBulkSupplier('');
+            setBulkInvoiceNumber('');
+            fetchMedicines();
+        } catch (error) {
+            alert(error.response?.data?.message || 'Error uploading bulk medicines');
+        }
+    };
+
     const handleLogout = () => { localStorage.removeItem('userInfo'); navigate('/'); };
 
     const filteredMedicines = medicines.filter(m =>
@@ -191,167 +231,272 @@ const PharmacyDashboard = () => {
 
                     <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 items-start">
                         {/* Form Card */}
-                        <div className="xl:col-span-4 bg-white p-6 sm:p-8 rounded-[2.5rem] shadow-xl shadow-slate-200/60 border border-slate-100 relative overflow-hidden animate-slide-up delay-100">
+                        <div className={`${isBulkMode ? 'xl:col-span-12' : 'xl:col-span-4'} bg-white p-6 sm:p-8 rounded-[2.5rem] shadow-xl shadow-slate-200/60 border border-slate-100 relative overflow-hidden animate-slide-up delay-100 transition-all duration-500`}>
                             <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 rounded-full -mr-16 -mt-16 blur-3xl"></div>
 
-                            <div className="flex justify-between items-center mb-8">
-                                <h3 className="text-xl font-black text-slate-900">{editId ? 'Edit Entry' : 'Manual Entry'}</h3>
+                            <div className="flex justify-between items-center mb-8 relative z-10">
+                                <h3 className="text-xl font-black text-slate-900">{isBulkMode ? 'Bulk Invoice Upload' : editId ? 'Edit Entry' : 'Manual Entry'}</h3>
                                 <button
+                                    type="button"
                                     onClick={() => setIsBulkMode(!isBulkMode)}
-                                    className="text-[10px] font-black uppercase tracking-widest bg-slate-100 text-slate-500 px-4 py-2 rounded-xl hover:bg-blue-600 hover:text-white transition-all"
+                                    className={`text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-xl transition-all ${isBulkMode ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}
                                 >
-                                    {isBulkMode ? 'Single Mode' : 'Bulk Upload'}
+                                    {isBulkMode ? 'Switch to Single' : 'Switch to Bulk'}
                                 </button>
                             </div>
 
-                            <form onSubmit={handleSubmit} className="space-y-6">
-                                <div className="space-y-2">
-                                    <label className="text-[10px] uppercase font-black text-slate-400 ml-1 tracking-widest">General Detail</label>
-                                    <input
-                                        name="name"
-                                        placeholder="MEDICINE NAME"
-                                        value={formData.name}
-                                        onChange={handleChange}
-                                        list="medicine-suggestions"
-                                        className="w-full p-4 bg-slate-50 border-none rounded-2xl font-bold shadow-inner focus:bg-white focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none uppercase"
-                                        required
-                                    />
-                                    <datalist id="medicine-suggestions">
-                                        {suggestions.map((name, index) => <option key={index} value={name} />)}
-                                    </datalist>
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="space-y-1.5">
-                                        <label className="text-[10px] uppercase font-black text-slate-400 ml-1 tracking-widest">Batch #</label>
-                                        <input name="batchNumber" placeholder="B-2024" value={formData.batchNumber} onChange={handleChange} className="w-full p-4 bg-slate-50 border-none rounded-2xl font-bold shadow-inner focus:bg-white focus:ring-4 focus:ring-blue-500/10 transition-all outline-none uppercase" required />
+                            {!isBulkMode ? (
+                                <form onSubmit={handleSubmit} className="space-y-6 relative z-10">
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] uppercase font-black text-slate-400 ml-1 tracking-widest">General Detail</label>
+                                        <input
+                                            name="name"
+                                            placeholder="MEDICINE NAME"
+                                            value={formData.name}
+                                            onChange={handleChange}
+                                            list="medicine-suggestions"
+                                            className="w-full p-4 bg-slate-50 border-none rounded-2xl font-bold shadow-inner focus:bg-white focus:ring-4 focus:ring-blue-500/10 transition-all outline-none uppercase"
+                                            required
+                                        />
+                                        <datalist id="medicine-suggestions">
+                                            {suggestions.map((name, index) => <option key={index} value={name} />)}
+                                        </datalist>
                                     </div>
-                                    <div className="space-y-1.5">
-                                        <label className="text-[10px] uppercase font-black text-slate-400 ml-1 tracking-widest">Quantity</label>
-                                        <input name="quantity" type="number" placeholder="0" value={formData.quantity} onChange={handleChange} className="w-full p-4 bg-slate-50 border-none rounded-2xl font-bold shadow-inner focus:bg-white focus:ring-4 focus:ring-blue-500/10 transition-all outline-none" required />
+
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-1.5">
+                                            <label className="text-[10px] uppercase font-black text-slate-400 ml-1 tracking-widest">Batch #</label>
+                                            <input name="batchNumber" placeholder="B-2024" value={formData.batchNumber} onChange={handleChange} className="w-full p-4 bg-slate-50 border-none rounded-2xl font-bold shadow-inner focus:bg-white focus:ring-4 focus:ring-blue-500/10 transition-all outline-none uppercase" required />
+                                        </div>
+                                        <div className="space-y-1.5">
+                                            <label className="text-[10px] uppercase font-black text-slate-400 ml-1 tracking-widest">Quantity</label>
+                                            <input name="quantity" type="number" placeholder="0" value={formData.quantity} onChange={handleChange} className="w-full p-4 bg-slate-50 border-none rounded-2xl font-bold shadow-inner focus:bg-white focus:ring-4 focus:ring-blue-500/10 transition-all outline-none" required />
+                                        </div>
                                     </div>
-                                </div>
 
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="space-y-1.5">
-                                        <label className="text-[10px] uppercase font-black text-slate-400 ml-1 tracking-widest">Sale (MRP)</label>
-                                        <input name="mrp" type="number" placeholder="₹ 0.00" value={formData.mrp} onChange={handleChange} className="w-full p-4 bg-slate-50 border-none rounded-2xl font-bold shadow-inner focus:bg-white focus:ring-4 focus:ring-emerald-500/10 text-emerald-600 transition-all outline-none" required />
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-1.5">
+                                            <label className="text-[10px] uppercase font-black text-slate-400 ml-1 tracking-widest">Sale (MRP)</label>
+                                            <input name="mrp" type="number" placeholder="₹ 0.00" value={formData.mrp} onChange={handleChange} className="w-full p-4 bg-slate-50 border-none rounded-2xl font-bold shadow-inner focus:bg-white focus:ring-4 focus:ring-emerald-500/10 text-emerald-600 transition-all outline-none" required />
+                                        </div>
+                                        <div className="space-y-1.5">
+                                            <label className="text-[10px] uppercase font-black text-slate-400 ml-1 tracking-widest">Cost (Supplier)</label>
+                                            <input name="supplierPrice" type="number" placeholder="₹ 0.00" value={formData.supplierPrice} onChange={handleChange} className="w-full p-4 bg-slate-50 border-none rounded-2xl font-bold shadow-inner focus:bg-white focus:ring-4 focus:ring-blue-500/10 text-blue-600 transition-all outline-none" required />
+                                        </div>
                                     </div>
-                                    <div className="space-y-1.5">
-                                        <label className="text-[10px] uppercase font-black text-slate-400 ml-1 tracking-widest">Cost (Supplier)</label>
-                                        <input name="supplierPrice" type="number" placeholder="₹ 0.00" value={formData.supplierPrice} onChange={handleChange} className="w-full p-4 bg-slate-50 border-none rounded-2xl font-bold shadow-inner focus:bg-white focus:ring-4 focus:ring-blue-500/10 text-blue-600 transition-all outline-none" required />
+
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-1.5">
+                                            <label className="text-[10px] uppercase font-black text-slate-400 ml-1 tracking-widest">Supplier Source</label>
+                                            <select
+                                                name="supplier"
+                                                value={formData.supplier}
+                                                onChange={handleChange}
+                                                className="w-full p-4 bg-slate-50 border-none rounded-2xl font-bold shadow-inner focus:bg-white focus:ring-4 focus:ring-blue-500/10 transition-all outline-none appearance-none"
+                                            >
+                                                <option value="">Choose Supplier</option>
+                                                {suppliers.map(s => <option key={s._id} value={s._id}>{s.name}</option>)}
+                                            </select>
+                                        </div>
+                                        <div className="space-y-1.5">
+                                            <label className="text-[10px] uppercase font-black text-slate-400 ml-1 tracking-widest">Min. Stock Level</label>
+                                            <input name="minStockLevel" type="number" placeholder="10" value={formData.minStockLevel} onChange={handleChange} className="w-full p-4 bg-slate-50 border-none rounded-2xl font-bold shadow-inner focus:bg-white focus:ring-4 focus:ring-blue-500/10 transition-all outline-none" />
+                                        </div>
                                     </div>
-                                </div>
 
-                                <div className="space-y-1.5">
-                                    <label className="text-[10px] uppercase font-black text-slate-400 ml-1 tracking-widest">Supplier Source</label>
-                                    <select
-                                        name="supplier"
-                                        value={formData.supplier}
-                                        onChange={handleChange}
-                                        className="w-full p-4 bg-slate-50 border-none rounded-2xl font-bold shadow-inner focus:bg-white focus:ring-4 focus:ring-blue-500/10 transition-all outline-none appearance-none"
-                                    >
-                                        <option value="">Choose Supplier</option>
-                                        {suppliers.map(s => <option key={s._id} value={s._id}>{s.name}</option>)}
-                                    </select>
-                                </div>
+                                    <div className="space-y-1.5">
+                                        <label className="text-[10px] uppercase font-black text-slate-400 ml-1 tracking-widest">Expiration Date</label>
+                                        <input name="expiryDate" type="date" value={formData.expiryDate} onChange={handleChange} className="w-full p-4 bg-slate-50 border-none rounded-2xl font-bold shadow-inner focus:bg-white focus:ring-4 focus:ring-red-500/10 transition-all outline-none" required />
+                                    </div>
 
-                                <div className="space-y-1.5">
-                                    <label className="text-[10px] uppercase font-black text-slate-400 ml-1 tracking-widest">Expiration Date</label>
-                                    <input name="expiryDate" type="date" value={formData.expiryDate} onChange={handleChange} className="w-full p-4 bg-slate-50 border-none rounded-2xl font-bold shadow-inner focus:bg-white focus:ring-4 focus:ring-red-500/10 transition-all outline-none" required />
-                                </div>
-
-                                <div className="flex gap-4 pt-4">
-                                    <button type="submit" className={`flex-1 py-4 rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl transition-all active:scale-95 ${editId ? 'bg-blue-600 text-white shadow-blue-200 hover:bg-blue-700' : 'bg-slate-900 text-white shadow-slate-200 hover:bg-black'}`}>
-                                        {editId ? 'Update Stock' : 'Add to Stock'}
-                                    </button>
-                                    {editId && (
-                                        <button type="button" onClick={() => setEditId(null)} className="px-6 bg-slate-100 text-slate-600 rounded-2xl font-black text-xs uppercase hover:bg-slate-200 transition-all lg:whitespace-nowrap">
-                                            Cancel
+                                    <div className="flex gap-4 pt-4">
+                                        <button type="submit" className={`flex-1 py-4 rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl transition-all active:scale-95 ${editId ? 'bg-blue-600 text-white shadow-blue-200 hover:bg-blue-700' : 'bg-slate-900 text-white shadow-slate-200 hover:bg-black'}`}>
+                                            {editId ? 'Update Stock' : 'Add to Stock'}
                                         </button>
-                                    )}
-                                </div>
-                            </form>
+                                        {editId && (
+                                            <button type="button" onClick={() => setEditId(null)} className="px-6 bg-slate-100 text-slate-600 rounded-2xl font-black text-xs uppercase hover:bg-slate-200 transition-all lg:whitespace-nowrap">
+                                                Cancel
+                                            </button>
+                                        )}
+                                    </div>
+                                </form>
+                            ) : (
+                                <form onSubmit={handleBulkSubmit} className="space-y-8 relative z-10">
+                                    <div className="bg-slate-50 p-6 rounded-[2rem] border border-slate-100 grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
+                                        <div className="space-y-1.5">
+                                            <label className="text-[10px] uppercase font-black text-slate-400 ml-1 tracking-widest">Consignment Supplier</label>
+                                            <select
+                                                value={bulkSupplier}
+                                                onChange={(e) => setBulkSupplier(e.target.value)}
+                                                className="w-full p-4 bg-white border-none rounded-2xl font-bold shadow-sm focus:ring-4 focus:ring-blue-500/10 transition-all outline-none appearance-none"
+                                                required
+                                            >
+                                                <option value="">Select Primary Source</option>
+                                                {suppliers.map(s => <option key={s._id} value={s._id}>{s.name}</option>)}
+                                            </select>
+                                        </div>
+                                        <div className="space-y-1.5">
+                                            <label className="text-[10px] uppercase font-black text-slate-400 ml-1 tracking-widest">Master Invoice #</label>
+                                            <input
+                                                placeholder="INV-2024-XXX"
+                                                value={bulkInvoiceNumber}
+                                                onChange={(e) => setBulkInvoiceNumber(e.target.value)}
+                                                className="w-full p-4 bg-white border-none rounded-2xl font-bold shadow-sm focus:ring-4 focus:ring-blue-500/10 transition-all outline-none uppercase"
+                                                required
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="overflow-x-auto -mx-6 px-6">
+                                        <table className="w-full text-left min-w-[1200px]">
+                                            <thead>
+                                                <tr className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
+                                                    <th className="pb-4 pl-4 min-w-[200px]">Medicine Information</th>
+                                                    <th className="pb-4 min-w-[140px]">Batch Index</th>
+                                                    <th className="pb-4 min-w-[140px]">Expiry</th>
+                                                    <th className="pb-4 min-w-[100px]">Qty</th>
+                                                    <th className="pb-4 min-w-[100px]">MRP</th>
+                                                    <th className="pb-4 min-w-[100px]">Cost</th>
+                                                    <th className="pb-4 min-w-[100px]">Min. Stock</th>
+                                                    <th className="pb-4 w-10">Action</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="space-y-4">
+                                                {bulkData.map((row, index) => (
+                                                    <tr key={index} className="group hover:bg-slate-50 transition-colors">
+                                                        <td className="py-3 pr-2">
+                                                            <input name="name" placeholder="PRODUCT NAME" value={row.name} onChange={(e) => handleBulkDataChange(index, e)} className="w-full p-3 bg-slate-50 rounded-xl font-bold text-xs shadow-inner focus:bg-white focus:ring-2 focus:ring-blue-500/20 outline-none uppercase" required />
+                                                        </td>
+                                                        <td className="py-3 pr-2">
+                                                            <input name="batchNumber" placeholder="BATCH #" value={row.batchNumber} onChange={(e) => handleBulkDataChange(index, e)} className="w-full p-3 bg-slate-50 rounded-xl font-bold text-xs shadow-inner focus:bg-white focus:ring-2 focus:ring-blue-500/20 outline-none uppercase" required />
+                                                        </td>
+                                                        <td className="py-3 pr-2">
+                                                            <input name="expiryDate" type="date" value={row.expiryDate} onChange={(e) => handleBulkDataChange(index, e)} className="w-full p-3 bg-slate-50 rounded-xl font-bold text-xs shadow-inner focus:bg-white focus:ring-2 focus:ring-blue-500/20 outline-none" required />
+                                                        </td>
+                                                        <td className="py-3 pr-2">
+                                                            <input name="quantity" type="number" placeholder="QTY" value={row.quantity} onChange={(e) => handleBulkDataChange(index, e)} className="w-full p-3 bg-slate-50 rounded-xl font-bold text-xs shadow-inner focus:bg-white focus:ring-2 focus:ring-blue-500/20 outline-none" required />
+                                                        </td>
+                                                        <td className="py-3 pr-2">
+                                                            <input name="mrp" type="number" placeholder="MRP" value={row.mrp} onChange={(e) => handleBulkDataChange(index, e)} className="w-full p-3 bg-slate-50 rounded-xl font-bold text-xs shadow-inner focus:bg-white focus:ring-2 focus:ring-emerald-500/20 outline-none text-emerald-600" required />
+                                                        </td>
+                                                        <td className="py-3 pr-2">
+                                                            <input name="supplierPrice" type="number" placeholder="COST" value={row.supplierPrice} onChange={(e) => handleBulkDataChange(index, e)} className="w-full p-3 bg-slate-50 rounded-xl font-bold text-xs shadow-inner focus:bg-white focus:ring-2 focus:ring-blue-500/20 outline-none text-blue-600" required />
+                                                        </td>
+                                                        <td className="py-3 pr-2">
+                                                            <input name="minStockLevel" type="number" placeholder="MIN" value={row.minStockLevel} onChange={(e) => handleBulkDataChange(index, e)} className="w-full p-3 bg-slate-50 rounded-xl font-bold text-xs shadow-inner focus:bg-white focus:ring-2 focus:ring-blue-500/20 outline-none" />
+                                                        </td>
+                                                        <td className="py-3 text-center">
+                                                            <button type="button" onClick={() => handleRemoveBulkRow(index)} className="p-2 text-slate-300 hover:text-red-500 transition-colors">
+                                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M6 18L18 6M6 6l12 12"></path></svg>
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+
+                                    <div className="flex flex-col sm:flex-row justify-between items-center gap-6 pt-4 border-t border-slate-50">
+                                        <button type="button" onClick={handleAddBulkRow} className="group flex items-center gap-3 text-slate-400 font-black text-[10px] uppercase tracking-widest hover:text-blue-600 transition-all">
+                                            <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center group-hover:bg-blue-50 transition-colors">
+                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 4v16m8-8H4"></path></svg>
+                                            </div>
+                                            Add Another Row
+                                        </button>
+
+                                        <div className="flex gap-4 w-full sm:w-auto">
+                                            <button
+                                                type="submit"
+                                                className="flex-1 sm:flex-none px-12 py-4 bg-slate-900 text-white rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl shadow-slate-200 hover:bg-black transition-all active:scale-95"
+                                            >
+                                                Commit Consignment
+                                            </button>
+                                        </div>
+                                    </div>
+                                </form>
+                            )}
                         </div>
 
-                        {/* List Area */}
-                        <div className="xl:col-span-8 space-y-6 animate-slide-up delay-200">
-                            <div className="bg-white p-4 sm:p-6 rounded-[2.5rem] shadow-xl shadow-slate-200/60 border border-slate-100 flex flex-col md:flex-row gap-4 items-center">
-                                <div className="relative flex-1 w-full">
-                                    <input
-                                        type="text"
-                                        placeholder="Quick search stocks..."
-                                        value={searchTerm}
-                                        onChange={(e) => setSearchTerm(e.target.value)}
-                                        className="w-full p-4 pl-12 bg-slate-50 border-none rounded-2xl font-medium focus:bg-white focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none"
-                                    />
-                                    <svg className="w-5 h-5 absolute left-4 top-4.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-                                </div>
-                                <div className="flex gap-2 w-full md:w-auto">
-                                    <div className="px-5 py-3.5 bg-blue-50 rounded-2xl text-blue-600 font-black text-[10px] uppercase tracking-widest border border-blue-100 lg:whitespace-nowrap">
-                                        Total: {filteredMedicines.length} Items
+                        {!isBulkMode && (
+                            /* List Area */
+                            <div className="xl:col-span-8 space-y-6 animate-slide-up delay-200">
+                                <div className="bg-white p-4 sm:p-6 rounded-[2.5rem] shadow-xl shadow-slate-200/60 border border-slate-100 flex flex-col md:flex-row gap-4 items-center">
+                                    <div className="relative flex-1 w-full">
+                                        <input
+                                            type="text"
+                                            placeholder="Quick search stocks..."
+                                            value={searchTerm}
+                                            onChange={(e) => setSearchTerm(e.target.value)}
+                                            className="w-full p-4 pl-12 bg-slate-50 border-none rounded-2xl font-medium focus:bg-white focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none"
+                                        />
+                                        <svg className="w-5 h-5 absolute left-4 top-4.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                                    </div>
+                                    <div className="flex gap-2 w-full md:w-auto">
+                                        <div className="px-5 py-3.5 bg-blue-50 rounded-2xl text-blue-600 font-black text-[10px] uppercase tracking-widest border border-blue-100 lg:whitespace-nowrap">
+                                            Total: {filteredMedicines.length} Items
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
 
-                            <div className="space-y-4">
-                                {filteredMedicines.length === 0 ? (
-                                    <div className="py-24 text-center bg-white rounded-[3rem] border-2 border-dashed border-slate-100">
-                                        <p className="text-slate-400 font-bold italic">No inventory matches your search.</p>
-                                    </div>
-                                ) : (
-                                    filteredMedicines.map((item) => {
-                                        const daysToExpiry = getDaysToExpiry(item.expiryDate);
-                                        const isCritical = daysToExpiry <= 15;
-                                        const isWarning = daysToExpiry <= 60 && daysToExpiry > 15;
+                                <div className="space-y-4">
+                                    {filteredMedicines.length === 0 ? (
+                                        <div className="py-24 text-center bg-white rounded-[3rem] border-2 border-dashed border-slate-100">
+                                            <p className="text-slate-400 font-bold italic">No inventory matches your search.</p>
+                                        </div>
+                                    ) : (
+                                        filteredMedicines.map((item) => {
+                                            const daysToExpiry = getDaysToExpiry(item.expiryDate);
+                                            const isCritical = daysToExpiry <= 15;
+                                            const isWarning = daysToExpiry <= 60 && daysToExpiry > 15;
 
-                                        return (
-                                            <div key={item._id} className="bg-white p-5 sm:p-6 rounded-[2rem] shadow-sm hover:shadow-xl transition-all border border-slate-100 group flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 overflow-hidden relative">
-                                                {isCritical && <div className="absolute top-0 left-0 w-1.5 h-full bg-red-500"></div>}
-                                                {isWarning && <div className="absolute top-0 left-0 w-1.5 h-full bg-orange-400"></div>}
+                                            return (
+                                                <div key={item._id} className="bg-white p-5 sm:p-6 rounded-[2rem] shadow-sm hover:shadow-xl transition-all border border-slate-100 group flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 overflow-hidden relative">
+                                                    {isCritical && <div className="absolute top-0 left-0 w-1.5 h-full bg-red-500"></div>}
+                                                    {isWarning && <div className="absolute top-0 left-0 w-1.5 h-full bg-orange-400"></div>}
 
-                                                <div className="flex items-center gap-5 w-full sm:w-auto">
-                                                    <div className={`w-16 h-16 rounded-2xl flex items-center justify-center font-black text-2xl shrink-0 transition-colors ${isCritical ? 'bg-red-50 text-red-500' : 'bg-slate-50 text-slate-300 group-hover:bg-blue-50 group-hover:text-blue-500'}`}>
-                                                        {item.name.charAt(0)}
+                                                    <div className="flex items-center gap-5 w-full sm:w-auto">
+                                                        <div className={`w-16 h-16 rounded-2xl flex items-center justify-center font-black text-2xl shrink-0 transition-colors ${isCritical ? 'bg-red-50 text-red-500' : 'bg-slate-50 text-slate-300 group-hover:bg-blue-50 group-hover:text-blue-500'}`}>
+                                                            {item.name.charAt(0)}
+                                                        </div>
+                                                        <div className="min-w-0">
+                                                            <h4 className="text-lg font-black text-slate-900 group-hover:text-blue-600 transition-colors uppercase truncate">{item.name}</h4>
+                                                            <div className="flex items-center gap-3 text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">
+                                                                <span>Batch: {item.batchNumber}</span>
+                                                                <span className="w-1 h-1 bg-slate-200 rounded-full"></span>
+                                                                <span className={isCritical ? 'text-red-500' : isWarning ? 'text-orange-500' : ''}>
+                                                                    Exp: {new Date(item.expiryDate).toLocaleDateString(undefined, { month: 'short', year: 'numeric' })}
+                                                                </span>
+                                                            </div>
+                                                        </div>
                                                     </div>
-                                                    <div className="min-w-0">
-                                                        <h4 className="text-lg font-black text-slate-900 group-hover:text-blue-600 transition-colors uppercase truncate">{item.name}</h4>
-                                                        <div className="flex items-center gap-3 text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">
-                                                            <span>Batch: {item.batchNumber}</span>
-                                                            <span className="w-1 h-1 bg-slate-200 rounded-full"></span>
-                                                            <span className={isCritical ? 'text-red-500' : isWarning ? 'text-orange-500' : ''}>
-                                                                Exp: {new Date(item.expiryDate).toLocaleDateString(undefined, { month: 'short', year: 'numeric' })}
-                                                            </span>
+
+                                                    <div className="flex items-center justify-between sm:justify-end gap-4 sm:gap-12 w-full sm:w-auto border-t sm:border-0 pt-4 sm:pt-0">
+                                                        <div className="text-center sm:text-right">
+                                                            <p className="text-[10px] uppercase font-black text-slate-300 tracking-[0.2em] mb-1">IN STOCK</p>
+                                                            <p className={`text-2xl font-black ${item.quantity <= (item.minStockLevel || 10) ? 'text-red-500' : 'text-slate-900'}`}>
+                                                                {item.quantity}
+                                                            </p>
+                                                        </div>
+                                                        <div className="text-center sm:text-right">
+                                                            <p className="text-[10px] uppercase font-black text-slate-300 tracking-[0.2em] mb-1">UNIT MRP</p>
+                                                            <p className="text-2xl font-black text-emerald-600">₹{item.mrp}</p>
+                                                        </div>
+                                                        <div className="flex gap-2">
+                                                            <button onClick={() => handleEdit(item)} className="p-3 bg-slate-50 text-slate-400 rounded-xl hover:bg-blue-50 hover:text-blue-600 transition-all shadow-sm">
+                                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                                                            </button>
+                                                            <button onClick={() => handleReturn(item)} className="p-3 bg-slate-50 text-slate-400 rounded-xl hover:bg-orange-50 hover:text-orange-600 transition-all shadow-sm">
+                                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 15l-4 4m0 0l-4-4m4 4V9"></path></svg>
+                                                            </button>
                                                         </div>
                                                     </div>
                                                 </div>
-
-                                                <div className="flex items-center justify-between sm:justify-end gap-4 sm:gap-12 w-full sm:w-auto border-t sm:border-0 pt-4 sm:pt-0">
-                                                    <div className="text-center sm:text-right">
-                                                        <p className="text-[10px] uppercase font-black text-slate-300 tracking-[0.2em] mb-1">IN STOCK</p>
-                                                        <p className={`text-2xl font-black ${item.quantity <= (item.minStockLevel || 10) ? 'text-red-500' : 'text-slate-900'}`}>
-                                                            {item.quantity}
-                                                        </p>
-                                                    </div>
-                                                    <div className="text-center sm:text-right">
-                                                        <p className="text-[10px] uppercase font-black text-slate-300 tracking-[0.2em] mb-1">UNIT MRP</p>
-                                                        <p className="text-2xl font-black text-emerald-600">₹{item.mrp}</p>
-                                                    </div>
-                                                    <div className="flex gap-2">
-                                                        <button onClick={() => handleEdit(item)} className="p-3 bg-slate-50 text-slate-400 rounded-xl hover:bg-blue-50 hover:text-blue-600 transition-all shadow-sm">
-                                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
-                                                        </button>
-                                                        <button onClick={() => handleReturn(item)} className="p-3 bg-slate-50 text-slate-400 rounded-xl hover:bg-orange-50 hover:text-orange-600 transition-all shadow-sm">
-                                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 15l-4 4m0 0l-4-4m4 4V9"></path></svg>
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        );
-                                    })
-                                )}
+                                            );
+                                        })
+                                    )}
+                                </div>
                             </div>
-                        </div>
+                        )}
                     </div>
                 </div>
             </main>
