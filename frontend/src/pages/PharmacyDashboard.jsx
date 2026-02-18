@@ -54,6 +54,13 @@ const PharmacyDashboard = () => {
         }
     };
 
+    const getDaysToExpiry = (expiryDate) => {
+        const today = new Date();
+        const exp = new Date(expiryDate);
+        const diffTime = exp - today;
+        return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
@@ -87,10 +94,19 @@ const PharmacyDashboard = () => {
         m.batchNumber.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
+    const expiringSoonCount = medicines.filter(m => getDaysToExpiry(m.expiryDate) <= 30).length;
+
     return (
         <div className="p-8 bg-gray-50 min-h-screen">
             <div className="flex justify-between items-center mb-6">
-                <h1 className="text-3xl font-bold text-blue-800">Pharmacy Dashboard</h1>
+                <div>
+                    <h1 className="text-3xl font-bold text-blue-800">Pharmacy Dashboard</h1>
+                    {expiringSoonCount > 0 && (
+                        <div className="mt-2 bg-red-100 text-red-800 px-4 py-2 rounded-md font-bold shadow-sm inline-block animate-pulse">
+                            ⚠️ {expiringSoonCount} Medicine(s) Expiring Soon!
+                        </div>
+                    )}
+                </div>
                 <div className='flex gap-4'>
                     <Link to="/pos" className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 font-bold shadow">
                         POS / Billing
@@ -162,18 +178,32 @@ const PharmacyDashboard = () => {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-200">
-                                {filteredMedicines.map((item) => (
-                                    <tr key={item._id} className={item.quantity <= item.minStockLevel ? 'bg-red-50' : ''}>
-                                        <td className="px-4 py-2 font-medium">{item.name}</td>
-                                        <td className="px-4 py-2">{item.batchNumber}</td>
-                                        <td className="px-4 py-2">{new Date(item.expiryDate).toLocaleDateString()}</td>
-                                        <td className="px-4 py-2">₹{item.price}</td>
-                                        <td className="px-4 py-2 font-bold">{item.quantity}</td>
-                                        <td className="px-4 py-2">
-                                            <button onClick={() => handleDelete(item._id)} className="text-red-600 hover:text-red-800">Delete</button>
-                                        </td>
-                                    </tr>
-                                ))}
+                                {filteredMedicines.map((item) => {
+                                    const daysToExpiry = getDaysToExpiry(item.expiryDate);
+                                    let rowClass = '';
+                                    if (daysToExpiry <= 30) rowClass = 'bg-red-100'; // Critical
+                                    else if (daysToExpiry <= 90) rowClass = 'bg-yellow-50'; // Warning
+                                    else if (item.quantity <= item.minStockLevel) rowClass = 'bg-gray-100'; // Low Stock
+
+                                    return (
+                                        <tr key={item._id} className={rowClass}>
+                                            <td className="px-4 py-2 font-medium">
+                                                {item.name}
+                                                {daysToExpiry <= 30 && <span className="ml-2 text-xs bg-red-500 text-white px-1 rounded">Expiring</span>}
+                                            </td>
+                                            <td className="px-4 py-2">{item.batchNumber}</td>
+                                            <td className="px-4 py-2">
+                                                {new Date(item.expiryDate).toLocaleDateString()}
+                                                <div className="text-xs text-gray-500">{daysToExpiry} days left</div>
+                                            </td>
+                                            <td className="px-4 py-2">₹{item.price}</td>
+                                            <td className="px-4 py-2 font-bold">{item.quantity}</td>
+                                            <td className="px-4 py-2">
+                                                <button onClick={() => handleDelete(item._id)} className="text-red-600 hover:text-red-800">Delete</button>
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
                             </tbody>
                         </table>
                         {filteredMedicines.length === 0 && <p className="text-center py-4 text-gray-500">No medicines found.</p>}
