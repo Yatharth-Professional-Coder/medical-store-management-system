@@ -1,4 +1,5 @@
 const asyncHandler = require('express-async-handler');
+const mongoose = require('mongoose');
 const Pharmacy = require('../models/Pharmacy');
 const User = require('../models/User');
 const generateToken = require('../utils/generateToken');
@@ -31,30 +32,33 @@ const createPharmacy = asyncHandler(async (req, res) => {
         throw new Error('Pharmacy with this license already exists');
     }
 
-    // Create User (Pharmacy Admin)
+    // Generate IDs upfront to handle circular dependency
+    const userId = new mongoose.Types.ObjectId();
+    const pharmacyId = new mongoose.Types.ObjectId();
+
+    // Create User (Pharmacy Admin) with pharmacyId
     const user = await User.create({
+        _id: userId,
         name: adminName,
         email: adminEmail,
         password: adminPassword,
-        role: 'PharmacyAdmin'
+        role: 'PharmacyAdmin',
+        pharmacyId: pharmacyId
     });
 
     if (user) {
-        // Create Pharmacy
+        // Create Pharmacy with owner (userId)
         const pharmacy = await Pharmacy.create({
+            _id: pharmacyId,
             name: pharmacyName,
             address,
             licenseNumber,
             contactNumber,
-            owner: user._id,
+            owner: userId,
             status: req.body.status || 'Pending'
         });
 
         if (pharmacy) {
-            // Update User with Pharmacy ID
-            user.pharmacyId = pharmacy._id;
-            await user.save();
-
             res.status(201).json({
                 message: 'Pharmacy and Admin created successfully',
                 pharmacy,
@@ -66,8 +70,8 @@ const createPharmacy = asyncHandler(async (req, res) => {
                 }
             });
         } else {
-            // Rollback User creation if Pharmacy fails (simple version, better with transactions)
-            await User.findByIdAndDelete(user._id);
+            // Rollback User creation if Pharmacy fails
+            await User.findByIdAndDelete(userId);
             res.status(400);
             throw new Error('Invalid pharmacy data');
         }
@@ -103,33 +107,37 @@ const registerPharmacy = asyncHandler(async (req, res) => {
         throw new Error('Pharmacy with this license already exists');
     }
 
+    // Generate IDs upfront
+    const userId = new mongoose.Types.ObjectId();
+    const pharmacyId = new mongoose.Types.ObjectId();
+
     const user = await User.create({
+        _id: userId,
         name: adminName,
         email: adminEmail,
         password: adminPassword,
-        role: 'PharmacyAdmin'
+        role: 'PharmacyAdmin',
+        pharmacyId: pharmacyId
     });
 
     if (user) {
         const pharmacy = await Pharmacy.create({
+            _id: pharmacyId,
             name: pharmacyName,
             address,
             licenseNumber,
             contactNumber,
-            owner: user._id,
+            owner: userId,
             status: 'Pending' // Explicitly set to Pending
         });
 
         if (pharmacy) {
-            user.pharmacyId = pharmacy._id;
-            await user.save();
-
             res.status(201).json({
                 message: 'Registration successful. Please wait for Super Admin approval.',
                 pharmacy
             });
         } else {
-            await User.findByIdAndDelete(user._id);
+            await User.findByIdAndDelete(userId);
             res.status(400);
             throw new Error('Invalid pharmacy data');
         }
