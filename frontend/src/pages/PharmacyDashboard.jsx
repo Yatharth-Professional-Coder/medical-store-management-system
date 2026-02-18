@@ -108,6 +108,29 @@ const PharmacyDashboard = () => {
         }
     };
 
+    const handleReturn = async (medicine) => {
+        const quantityToReturn = prompt(`Enter quantity to return for ${medicine.name} (Available: ${medicine.quantity}):`, medicine.quantity);
+        if (!quantityToReturn) return;
+
+        const qty = parseInt(quantityToReturn);
+        if (isNaN(qty) || qty <= 0 || qty > medicine.quantity) {
+            alert('Invalid quantity');
+            return;
+        }
+
+        try {
+            await api.post('/returns', {
+                medicineId: medicine._id,
+                quantity: qty,
+                reason: 'Expired/Damaged'
+            });
+            alert('Medicine returned successfully');
+            fetchMedicines();
+        } catch (error) {
+            alert(error.response?.data?.message || 'Error returning medicine');
+        }
+    };
+
     const handleLogout = () => {
         localStorage.removeItem('userInfo');
         navigate('/');
@@ -237,6 +260,11 @@ const PharmacyDashboard = () => {
                                             <td className="px-4 py-2 space-x-2">
                                                 <button onClick={() => handleEdit(item)} className="text-blue-600 hover:text-blue-800">Edit</button>
                                                 <button onClick={() => handleDelete(item._id)} className="text-red-600 hover:text-red-800">Delete</button>
+                                                {(daysToExpiry <= 0 || item.quantity > 0) && (
+                                                    <button onClick={() => handleReturn(item)} className="text-orange-600 hover:text-orange-800 text-xs block mt-1">
+                                                        Return
+                                                    </button>
+                                                )}
                                             </td>
                                         </tr>
                                     );

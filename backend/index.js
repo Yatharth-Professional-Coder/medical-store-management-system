@@ -23,6 +23,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/pharmacies', pharmacyRoutes);
 app.use('/api/medicines', medicineRoutes);
 app.use('/api/bills', require('./routes/billRoutes'));
+app.use('/api/returns', require('./routes/returnRoutes'));
 
 app.get('/', (req, res) => {
     res.send('API is running...');

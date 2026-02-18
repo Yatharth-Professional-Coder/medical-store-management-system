@@ -130,21 +130,27 @@ const POSPage = () => {
                 />
 
                 <div className="grid grid-cols-3 gap-4">
-                    {filteredMedicines.map(medicine => (
-                        <div key={medicine._id}
-                            className={`bg-white p-4 rounded shadow hover:shadow-lg cursor-pointer transition ${medicine.stock === 0 ? 'opacity-50' : ''}`}
-                            onClick={() => addToCart(medicine)}
-                        >
-                            <h3 className="font-bold text-lg">{medicine.name}</h3>
-                            <p className="text-sm text-gray-500">Batch: {medicine.batchNumber}</p>
-                            <div className="flex justify-between items-center mt-2">
-                                <span className="text-green-600 font-bold">₹{medicine.price}</span>
-                                <span className={`text-sm ${medicine.stock < 10 ? 'text-red-500' : 'text-gray-600'}`}>
-                                    Stock: {medicine.stock}
-                                </span>
+                    {filteredMedicines.map(medicine => {
+                        const isExpired = new Date(medicine.expiryDate) < new Date();
+                        return (
+                            <div key={medicine._id}
+                                className={`p-4 rounded shadow transition ${isExpired || medicine.stock === 0 ? 'bg-red-50 opacity-60 cursor-not-allowed' : 'bg-white hover:shadow-lg cursor-pointer'}`}
+                                onClick={() => !isExpired && addToCart(medicine)}
+                            >
+                                <h3 className="font-bold text-lg flex justify-between">
+                                    {medicine.name}
+                                    {isExpired && <span className="text-xs bg-red-600 text-white px-2 py-1 rounded">EXPIRED</span>}
+                                </h3>
+                                <p className="text-sm text-gray-500">Batch: {medicine.batchNumber}</p>
+                                <div className="flex justify-between items-center mt-2">
+                                    <span className="text-green-600 font-bold">₹{medicine.price}</span>
+                                    <span className={`text-sm ${medicine.stock < 10 ? 'text-red-500' : 'text-gray-600'}`}>
+                                        Stock: {medicine.stock}
+                                    </span>
+                                </div>
                             </div>
-                        </div>
-                    ))}
+                        );
+                    })}
                 </div>
             </div>
 

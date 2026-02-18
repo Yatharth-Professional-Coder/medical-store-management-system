@@ -45,6 +45,14 @@ const createBill = asyncHandler(async (req, res) => {
             throw new Error(`Insufficient stock for ${item.name}. Available: ${medicine.quantity}`);
         }
 
+        // Check for Expiry
+        const today = new Date();
+        const expiryDate = new Date(medicine.expiryDate);
+        if (expiryDate < today) {
+            res.status(400);
+            throw new Error(`Cannot bill expired medicine: ${item.name} (Expired on ${expiryDate.toLocaleDateString()})`);
+        }
+
         // Add to bulk update operations
         // We decrement the quantity for this specific medicine
         medicine.quantity = medicine.quantity - item.quantity;
