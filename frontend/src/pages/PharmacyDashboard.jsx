@@ -66,9 +66,10 @@ const PharmacyDashboard = () => {
     };
 
     const handleChange = (e) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
+        const value = e.target.name === 'name' ? e.target.value.toUpperCase() : e.target.value;
+        setFormData({ ...formData, [e.target.name]: value });
         if (e.target.name === 'name') {
-            fetchSuggestions(e.target.value);
+            fetchSuggestions(value);
         }
     };
 
@@ -155,7 +156,7 @@ const PharmacyDashboard = () => {
     const handleBulkChange = (index, e) => {
         const { name, value } = e.target;
         const list = [...bulkData];
-        list[index][name] = value;
+        list[index][name] = name === 'name' ? value.toUpperCase() : value;
         setBulkData(list);
     };
 
