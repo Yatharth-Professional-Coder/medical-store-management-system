@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import api from '../api/axios';
 import { useNavigate, Link } from 'react-router-dom';
+import { medicineSuggestions } from '../data/medicineSuggestions';
 
 const PharmacyDashboard = () => {
     const [medicines, setMedicines] = useState([]);
@@ -29,22 +30,15 @@ const PharmacyDashboard = () => {
         }
     };
 
-    const fetchSuggestions = async (query) => {
-        if (!query || query.length < 3) {
+    const fetchSuggestions = (query) => {
+        if (!query || query.length < 2) {
             setSuggestions([]);
             return;
         }
-        try {
-            const response = await fetch(`https://api.fda.gov/drug/label.json?search=openfda.brand_name:"${query}"&limit=5`);
-            const data = await response.json();
-            if (data.results) {
-                const names = data.results.map(item => item.openfda.brand_name ? item.openfda.brand_name[0] : null).filter(Boolean);
-                // Remove duplicates using Set
-                setSuggestions([...new Set(names)]);
-            }
-        } catch (error) {
-            console.error("Error fetching suggestions:", error);
-        }
+        const filtered = medicineSuggestions.filter(m =>
+            m.toLowerCase().includes(query.toLowerCase())
+        );
+        setSuggestions(filtered.slice(0, 10)); // Limit to 10 suggestions
     };
 
     const handleChange = (e) => {
