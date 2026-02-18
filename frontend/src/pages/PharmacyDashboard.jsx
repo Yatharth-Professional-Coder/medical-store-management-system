@@ -88,7 +88,7 @@ const PharmacyDashboard = () => {
         m.batchNumber.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
-    const expiringSoonCount = medicines.filter(m => getDaysToExpiry(m.expiryDate) <= 30).length;
+    const expiringSoonCount = medicines.filter(m => getDaysToExpiry(m.expiryDate) <= 60).length;
 
     return (
         <div className="p-8 bg-gray-50 min-h-screen">
@@ -175,15 +175,17 @@ const PharmacyDashboard = () => {
                                 {filteredMedicines.map((item) => {
                                     const daysToExpiry = getDaysToExpiry(item.expiryDate);
                                     let rowClass = '';
-                                    if (daysToExpiry <= 30) rowClass = 'bg-red-100'; // Critical
-                                    else if (daysToExpiry <= 90) rowClass = 'bg-yellow-50'; // Warning
+                                    if (daysToExpiry <= 15) rowClass = 'bg-red-200'; // Critical (15 days)
+                                    else if (daysToExpiry <= 30) rowClass = 'bg-orange-100'; // Warning (1 month)
+                                    else if (daysToExpiry <= 60) rowClass = 'bg-yellow-50'; // Caution (2 months)
                                     else if (item.quantity <= item.minStockLevel) rowClass = 'bg-gray-100'; // Low Stock
 
                                     return (
                                         <tr key={item._id} className={rowClass}>
                                             <td className="px-4 py-2 font-medium">
                                                 {item.name}
-                                                {daysToExpiry <= 30 && <span className="ml-2 text-xs bg-red-500 text-white px-1 rounded">Expiring</span>}
+                                                {daysToExpiry <= 15 && <span className="ml-2 text-xs bg-red-600 text-white px-1 rounded">Critical</span>}
+                                                {daysToExpiry > 15 && daysToExpiry <= 30 && <span className="ml-2 text-xs bg-orange-500 text-white px-1 rounded">Expiring</span>}
                                             </td>
                                             <td className="px-4 py-2">{item.batchNumber}</td>
                                             <td className="px-4 py-2">
