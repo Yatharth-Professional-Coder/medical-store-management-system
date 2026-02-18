@@ -6,6 +6,10 @@ const billSchema = mongoose.Schema({
         ref: 'Pharmacy',
         required: true
     },
+    pharmacyName: {
+        type: String,
+        required: true
+    },
     customerName: {
         type: String,
         required: true

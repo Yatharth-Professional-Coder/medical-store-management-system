@@ -72,6 +72,11 @@ const BillsHistory = () => {
                             <button onClick={() => setSelectedBill(null)} className="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
                         </div>
 
+                        <div className="mb-4 space-y-1 text-center border-b pb-4">
+                            <h3 className="text-xl font-bold uppercase">{selectedBill.pharmacyName}</h3>
+                            {selectedBill.gstNumber && <p className="text-sm text-gray-600">GSTIN: {selectedBill.gstNumber}</p>}
+                        </div>
+
                         <div className="mb-4 space-y-1">
                             <p><strong>Date:</strong> {new Date(selectedBill.createdAt).toLocaleString()}</p>
                             <p><strong>Customer:</strong> {selectedBill.customerName} ({selectedBill.customerMobile})</p>
@@ -100,28 +105,24 @@ const BillsHistory = () => {
                         </table>
 
                         <div className="border-t border-gray-200 pt-2 space-y-1">
-                            <div className="flex justify-between">
-                                <span>Subtotal</span>
+                            <div className="flex justify-between text-gray-600">
+                                <span>MRP Total</span>
                                 <span>₹{selectedBill.subTotal?.toFixed(2) || selectedBill.items.reduce((acc, item) => acc + item.amount, 0)}</span>
                             </div>
                             <div className="flex justify-between text-red-600">
                                 <span>Discount</span>
                                 <span>-₹{selectedBill.discountAmount?.toFixed(2) || 0}</span>
                             </div>
-                            <div className="flex justify-between text-gray-600">
-                                <span>GST (5%)</span>
-                                <span>+₹{selectedBill.taxAmount?.toFixed(2) || 0}</span>
+                            <div className="flex justify-between text-gray-500 text-sm">
+                                <span>Includes GST (5%)</span>
+                                <span>₹{selectedBill.taxAmount?.toFixed(2) || 0}</span>
                             </div>
                             <div className="flex justify-between items-center text-xl font-bold pt-2 border-t border-black">
                                 <span>Grand Total</span>
                                 <span>₹{selectedBill.totalAmount.toFixed(2)}</span>
                             </div>
                         </div>
-                        {selectedBill.gstNumber && (
-                            <div className="mt-4 text-center text-sm text-gray-500">
-                                <p>GSTIN: {selectedBill.gstNumber}</p>
-                            </div>
-                        )}
+                        {/* GST Display moved to top header */}
 
                         <div className="mt-6 text-center">
                             <button onClick={() => window.print()} className="bg-gray-800 text-white px-4 py-2 rounded hover:bg-black">

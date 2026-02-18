@@ -74,9 +74,9 @@ const POSPage = () => {
     const calculateTotals = () => {
         const subTotal = cart.reduce((total, item) => total + item.amount, 0);
         const discountAmount = parseFloat(discount) || 0;
-        const discountedTotal = Math.max(0, subTotal - discountAmount);
-        const taxAmount = discountedTotal * 0.05; // 5% GST
-        const grandTotal = discountedTotal + taxAmount;
+        const grandTotal = Math.max(0, subTotal - discountAmount); // Total to pay (Inclusive of Tax)
+        const taxableAmount = grandTotal / 1.05;
+        const taxAmount = grandTotal - taxableAmount; // Extract 5% GST
         return { subTotal, discountAmount, taxAmount, grandTotal };
     };
 
