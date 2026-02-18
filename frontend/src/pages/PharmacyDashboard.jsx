@@ -8,6 +8,7 @@ const PharmacyDashboard = () => {
         name: '', batchNumber: '', expiryDate: '', price: '', quantity: '', supplier: '', minStockLevel: ''
     });
     const [searchTerm, setSearchTerm] = useState('');
+    const [suggestions, setSuggestions] = useState([]);
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -28,8 +29,29 @@ const PharmacyDashboard = () => {
         }
     };
 
+    const fetchSuggestions = async (query) => {
+        if (!query || query.length < 3) {
+            setSuggestions([]);
+            return;
+        }
+        try {
+            const response = await fetch(`https://api.fda.gov/drug/label.json?search=openfda.brand_name:"${query}"&limit=5`);
+            const data = await response.json();
+            if (data.results) {
+                const names = data.results.map(item => item.openfda.brand_name ? item.openfda.brand_name[0] : null).filter(Boolean);
+                // Remove duplicates using Set
+                setSuggestions([...new Set(names)]);
+            }
+        } catch (error) {
+            console.error("Error fetching suggestions:", error);
+        }
+    };
+
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
+        if (e.target.name === 'name') {
+            fetchSuggestions(e.target.value);
+        }
     };
 
     const handleSubmit = async (e) => {
@@ -85,7 +107,20 @@ const PharmacyDashboard = () => {
                 <div className="bg-white p-6 rounded-lg shadow-md h-fit">
                     <h2 className="text-xl font-bold mb-4 border-b pb-2">Add Medicine</h2>
                     <form onSubmit={handleSubmit} className="space-y-3">
-                        <input name="name" placeholder="Medicine Name" value={formData.name} onChange={handleChange} className="w-full p-2 border rounded" required />
+                        <input
+                            name="name"
+                            placeholder="Medicine Name"
+                            value={formData.name}
+                            onChange={handleChange}
+                            list="medicine-suggestions"
+                            className="w-full p-2 border rounded"
+                            required
+                        />
+                        <datalist id="medicine-suggestions">
+                            {suggestions.map((name, index) => (
+                                <option key={index} value={name} />
+                            ))}
+                        </datalist>
                         <div className="flex gap-2">
                             <input name="batchNumber" placeholder="Batch No" value={formData.batchNumber} onChange={handleChange} className="w-full p-2 border rounded" required />
                             <input name="quantity" type="number" placeholder="Qty" value={formData.quantity} onChange={handleChange} className="w-full p-2 border rounded" required />
