@@ -25,6 +25,7 @@ app.use('/api/medicines', medicineRoutes);
 app.use('/api/bills', require('./routes/billRoutes'));
 app.use('/api/returns', require('./routes/returnRoutes'));
 app.use('/api/suppliers', require('./routes/supplierRoutes'));
+app.use('/api/customers', require('./routes/customerRoutes'));
 
 app.get('/', (req, res) => {
     res.send('API is running...');
