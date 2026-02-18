@@ -99,10 +99,29 @@ const BillsHistory = () => {
                             </tbody>
                         </table>
 
-                        <div className="flex justify-between items-center text-xl font-bold pt-2 border-t border-black">
-                            <span>Grand Total</span>
-                            <span>₹{selectedBill.totalAmount}</span>
+                        <div className="border-t border-gray-200 pt-2 space-y-1">
+                            <div className="flex justify-between">
+                                <span>Subtotal</span>
+                                <span>₹{selectedBill.subTotal?.toFixed(2) || selectedBill.items.reduce((acc, item) => acc + item.amount, 0)}</span>
+                            </div>
+                            <div className="flex justify-between text-red-600">
+                                <span>Discount</span>
+                                <span>-₹{selectedBill.discountAmount?.toFixed(2) || 0}</span>
+                            </div>
+                            <div className="flex justify-between text-gray-600">
+                                <span>GST (5%)</span>
+                                <span>+₹{selectedBill.taxAmount?.toFixed(2) || 0}</span>
+                            </div>
+                            <div className="flex justify-between items-center text-xl font-bold pt-2 border-t border-black">
+                                <span>Grand Total</span>
+                                <span>₹{selectedBill.totalAmount.toFixed(2)}</span>
+                            </div>
                         </div>
+                        {selectedBill.gstNumber && (
+                            <div className="mt-4 text-center text-sm text-gray-500">
+                                <p>GSTIN: {selectedBill.gstNumber}</p>
+                            </div>
+                        )}
 
                         <div className="mt-6 text-center">
                             <button onClick={() => window.print()} className="bg-gray-800 text-white px-4 py-2 rounded hover:bg-black">

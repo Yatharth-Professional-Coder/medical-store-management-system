@@ -7,6 +7,7 @@ const POSPage = () => {
     const [cart, setCart] = useState([]);
     const [customerName, setCustomerName] = useState('');
     const [customerMobile, setCustomerMobile] = useState('');
+    const [discount, setDiscount] = useState(0);
 
     useEffect(() => {
         fetchMedicines();
@@ -70,8 +71,13 @@ const POSPage = () => {
         ));
     };
 
-    const calculateTotal = () => {
-        return cart.reduce((total, item) => total + item.amount, 0);
+    const calculateTotals = () => {
+        const subTotal = cart.reduce((total, item) => total + item.amount, 0);
+        const discountAmount = parseFloat(discount) || 0;
+        const discountedTotal = Math.max(0, subTotal - discountAmount);
+        const taxAmount = discountedTotal * 0.05; // 5% GST
+        const grandTotal = discountedTotal + taxAmount;
+        return { subTotal, discountAmount, taxAmount, grandTotal };
     };
 
     const handleCheckout = async () => {
@@ -85,16 +91,20 @@ const POSPage = () => {
         }
 
         try {
+            const { subTotal, discountAmount, grandTotal } = calculateTotals();
             await api.post('/bills', {
                 customerName,
                 customerMobile,
                 items: cart,
-                totalAmount: calculateTotal()
+                subTotal,
+                discountAmount,
+                grandTotal
             });
             alert('Bill generated successfully!');
             setCart([]);
             setCustomerName('');
             setCustomerMobile('');
+            setDiscount(0);
             fetchMedicines(); // Refresh stock
         } catch (error) {
             alert(error.response?.data?.message || 'Error generating bill');
@@ -177,21 +187,40 @@ const POSPage = () => {
                 </div>
 
                 <div className="mt-4 pt-4 border-t">
-                    <div className="flex justify-between text-xl font-bold mb-4">
-                        <span>Total</span>
-                        <span>₹{calculateTotal()}</span>
+                    <div className="mt-4 pt-4 border-t space-y-2">
+                        <div className="flex justify-between text-gray-600">
+                            <span>Subtotal</span>
+                            <span>₹{calculateTotals().subTotal.toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between items-center text-gray-600">
+                            <span>Discount (₹)</span>
+                            <input
+                                type="number"
+                                min="0"
+                                value={discount}
+                                onChange={(e) => setDiscount(e.target.value)}
+                                className="w-20 p-1 border rounded text-right"
+                            />
+                        </div>
+                        <div className="flex justify-between text-gray-600">
+                            <span>GST (5%)</span>
+                            <span>₹{calculateTotals().taxAmount.toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between text-xl font-bold border-t pt-2">
+                            <span>Grand Total</span>
+                            <span>₹{calculateTotals().grandTotal.toFixed(2)}</span>
+                        </div>
+                        <button
+                            onClick={handleCheckout}
+                            className="w-full bg-green-600 text-white py-3 rounded font-bold hover:bg-green-700 disabled:opacity-50"
+                            disabled={cart.length === 0}
+                        >
+                            COMPLETE SALE
+                        </button>
                     </div>
-                    <button
-                        onClick={handleCheckout}
-                        className="w-full bg-green-600 text-white py-3 rounded font-bold hover:bg-green-700 disabled:opacity-50"
-                        disabled={cart.length === 0}
-                    >
-                        COMPLETE SALE
-                    </button>
                 </div>
             </div>
-        </div>
-    );
+            );
 };
 
-export default POSPage;
+            export default POSPage;

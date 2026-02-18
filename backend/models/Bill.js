@@ -26,9 +26,24 @@ const billSchema = mongoose.Schema({
         price: { type: Number, required: true },
         amount: { type: Number, required: true }
     }],
-    totalAmount: {
+    totalAmount: { // This will now serve as Grand Total
         type: Number,
         required: true
+    },
+    subTotal: {
+        type: Number,
+        required: true
+    },
+    discountAmount: {
+        type: Number,
+        default: 0
+    },
+    taxAmount: {
+        type: Number,
+        default: 0
+    },
+    gstNumber: { // Snapshot of GST number at the time of bill
+        type: String
     }
 }, {
     timestamps: true

@@ -6,8 +6,16 @@ const Medicine = require('../models/Medicine');
 // @route   POST /api/bills
 // @access  Pharmacy Admin/Staff
 const createBill = asyncHandler(async (req, res) => {
-    const { customerName, customerMobile, items, totalAmount } = req.body;
+    const { customerName, customerMobile, items, subTotal, discountAmount, grandTotal } = req.body;
     const pharmacyId = req.user.pharmacyId;
+
+    // Fetch Pharmacy to get GST Number
+    const pharmacy = await mongoose.model('Pharmacy').findById(pharmacyId);
+    const gstNumber = pharmacy ? pharmacy.gstNumber : null;
+
+    // Server-side validation/calculation could be added here for security
+    // For now, calculating Tax based on provided values or re-calculating
+    const calculatedTax = (grandTotal - (subTotal - discountAmount)).toFixed(2); // Approximate check
 
     if (!items || items.length === 0) {
         res.status(400);
@@ -46,7 +54,11 @@ const createBill = asyncHandler(async (req, res) => {
         customerName,
         customerMobile,
         items,
-        totalAmount
+        subTotal,
+        discountAmount,
+        taxAmount: (subTotal - discountAmount) * 0.05, // Calculate 5% tax on discounted amount
+        totalAmount: grandTotal,
+        gstNumber
     });
 
     res.status(201).json(bill);

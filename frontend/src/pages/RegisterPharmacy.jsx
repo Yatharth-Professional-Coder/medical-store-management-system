@@ -4,7 +4,7 @@ import { useNavigate, Link } from 'react-router-dom';
 
 const RegisterPharmacy = () => {
     const [formData, setFormData] = useState({
-        adminName: '', adminEmail: '', adminPassword: '', pharmacyName: '', address: '', licenseNumber: '', contactNumber: ''
+        adminName: '', adminEmail: '', adminPassword: '', pharmacyName: '', address: '', licenseNumber: '', contactNumber: '', gstNumber: ''
     });
     const navigate = useNavigate();
 
@@ -32,6 +32,7 @@ const RegisterPharmacy = () => {
                     <input name="address" placeholder="Address" value={formData.address} onChange={handleChange} className="w-full p-2 border rounded" required />
                     <input name="licenseNumber" placeholder="License Number" value={formData.licenseNumber} onChange={handleChange} className="w-full p-2 border rounded" required />
                     <input name="contactNumber" placeholder="Contact Number" value={formData.contactNumber} onChange={handleChange} className="w-full p-2 border rounded" required />
+                    <input name="gstNumber" placeholder="GST Number (Optional)" value={formData.gstNumber} onChange={handleChange} className="w-full p-2 border rounded" />
 
                     <h3 className="font-semibold text-gray-700 pt-2">Admin Account Details</h3>
                     <input name="adminName" placeholder="Admin Name" value={formData.adminName} onChange={handleChange} className="w-full p-2 border rounded" required />

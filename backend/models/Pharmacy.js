@@ -18,6 +18,10 @@ const pharmacySchema = mongoose.Schema({
         type: String,
         required: true
     },
+    gstNumber: {
+        type: String,
+        required: false
+    },
     owner: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',

@@ -15,7 +15,8 @@ const createPharmacy = asyncHandler(async (req, res) => {
         pharmacyName,
         address,
         licenseNumber,
-        contactNumber
+        contactNumber,
+        gstNumber
     } = req.body;
 
     // Check if user exists
@@ -54,6 +55,7 @@ const createPharmacy = asyncHandler(async (req, res) => {
             address,
             licenseNumber,
             contactNumber,
+            gstNumber,
             owner: userId,
             status: req.body.status || 'Pending'
         });
@@ -92,7 +94,8 @@ const registerPharmacy = asyncHandler(async (req, res) => {
         pharmacyName,
         address,
         licenseNumber,
-        contactNumber
+        contactNumber,
+        gstNumber
     } = req.body;
 
     const userExists = await User.findOne({ email: adminEmail });
@@ -127,6 +130,7 @@ const registerPharmacy = asyncHandler(async (req, res) => {
             address,
             licenseNumber,
             contactNumber,
+            gstNumber,
             owner: userId,
             status: 'Pending' // Explicitly set to Pending
         });
