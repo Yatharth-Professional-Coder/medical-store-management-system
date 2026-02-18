@@ -48,6 +48,19 @@ const billSchema = mongoose.Schema({
     },
     gstNumber: { // Snapshot of GST number at the time of bill
         type: String
+    },
+    paymentStatus: {
+        type: String,
+        enum: ['Paid', 'Partial', 'Unpaid'],
+        default: 'Paid'
+    },
+    paidAmount: {
+        type: Number,
+        default: 0
+    },
+    balanceAmount: {
+        type: Number,
+        default: 0
     }
 }, {
     timestamps: true

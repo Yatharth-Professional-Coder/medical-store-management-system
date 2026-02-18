@@ -7,18 +7,24 @@ const mongoose = require('mongoose');
 // @route   POST /api/bills
 // @access  Pharmacy Admin/Staff
 const createBill = asyncHandler(async (req, res) => {
-    const { customerName, customerMobile, items, subTotal, discountAmount, grandTotal } = req.body;
+    const { customerName, customerMobile, items, subTotal, discountAmount, grandTotal, paidAmount = grandTotal } = req.body;
     const pharmacyId = req.user.pharmacyId;
+
+    // Payment Status Logic
+    let paymentStatus = 'Paid';
+    let balanceAmount = 0;
+    const paid = Number(paidAmount);
+    const total = Number(grandTotal);
+
+    if (paid < total) {
+        balanceAmount = total - paid;
+        paymentStatus = paid === 0 ? 'Unpaid' : 'Partial';
+    }
 
     // Fetch Pharmacy to get GST Number and Name
     const pharmacy = await mongoose.model('Pharmacy').findById(pharmacyId);
     const gstNumber = pharmacy ? pharmacy.gstNumber : null;
     const pharmacyName = pharmacy ? pharmacy.name : 'Unknown Pharmacy';
-
-    // Server-side validation/calculation could be added here for security
-    // For now, calculating Tax based on provided values or re-calculating
-    // Inclusive GST Logic: Tax = Total - (Total / 1.05)
-    const calculatedTax = (grandTotal - (grandTotal / 1.05)).toFixed(2);
 
     if (!items || items.length === 0) {
         res.status(400);
@@ -26,7 +32,6 @@ const createBill = asyncHandler(async (req, res) => {
     }
 
     // 1. Validate Stock & Prepare Bulk Updates
-    const bulkEnv = [];
     for (const item of items) {
         const medicine = await Medicine.findById(item.medicineId);
 
@@ -53,8 +58,7 @@ const createBill = asyncHandler(async (req, res) => {
             throw new Error(`Cannot bill expired medicine: ${item.name} (Expired on ${expiryDate.toLocaleDateString()})`);
         }
 
-        // Add to bulk update operations
-        // We decrement the quantity for this specific medicine
+        // Decrement Quantity
         medicine.quantity = medicine.quantity - item.quantity;
         await medicine.save();
     }
@@ -68,9 +72,12 @@ const createBill = asyncHandler(async (req, res) => {
         items,
         subTotal,
         discountAmount,
-        taxAmount: grandTotal - (grandTotal / 1.05), // Back-calculate 5% tax from inclusive total
-        totalAmount: grandTotal,
-        gstNumber
+        taxAmount: total - (total / 1.05), // Calculated from inclusive
+        totalAmount: total,
+        gstNumber,
+        paymentStatus,
+        paidAmount: paid,
+        balanceAmount
     });
 
     res.status(201).json(bill);
@@ -82,6 +89,57 @@ const createBill = asyncHandler(async (req, res) => {
 const getBills = asyncHandler(async (req, res) => {
     const bills = await Bill.find({ pharmacyId: req.user.pharmacyId }).sort({ createdAt: -1 });
     res.json(bills);
+});
+
+// @desc    Get bills by customer mobile
+// @route   GET /api/bills/customer/:mobile
+const getCustomerBills = asyncHandler(async (req, res) => {
+    const bills = await Bill.find({
+        pharmacyId: req.user.pharmacyId,
+        customerMobile: req.params.mobile
+    }).sort({ createdAt: -1 });
+    res.json(bills);
+});
+
+// @desc    Settle a bill amount
+// @route   POST /api/bills/:id/settle
+const settleBill = asyncHandler(async (req, res) => {
+    const { amount } = req.body;
+    const bill = await Bill.findById(req.params.id);
+
+    if (!bill) {
+        res.status(404);
+        throw new Error('Bill not found');
+    }
+
+    if (bill.pharmacyId.toString() !== req.user.pharmacyId.toString()) {
+        res.status(401);
+        throw new Error('Not authorized');
+    }
+
+    const payAmount = Number(amount);
+    if (payAmount <= 0) {
+        res.status(400);
+        throw new Error('Invalid amount');
+    }
+
+    if (bill.balanceAmount <= 0) {
+        res.status(400);
+        throw new Error('Bill is already paid');
+    }
+
+    bill.paidAmount += payAmount;
+    bill.balanceAmount -= payAmount;
+
+    if (bill.balanceAmount <= 0) {
+        bill.balanceAmount = 0;
+        bill.paymentStatus = 'Paid';
+    } else {
+        bill.paymentStatus = 'Partial';
+    }
+
+    await bill.save();
+    res.json(bill);
 });
 
 const deleteBill = asyncHandler(async (req, res) => {
@@ -110,4 +168,4 @@ const deleteBill = asyncHandler(async (req, res) => {
     }
 });
 
-module.exports = { createBill, getBills, deleteBill };
+module.exports = { createBill, getBills, getCustomerBills, settleBill, deleteBill };

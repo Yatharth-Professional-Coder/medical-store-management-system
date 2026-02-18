@@ -6,6 +6,8 @@ import RegisterPharmacy from './pages/RegisterPharmacy';
 import POSPage from './pages/POSPage';
 import BillsHistory from './pages/BillsHistory';
 import SupplierManagement from './pages/SupplierManagement';
+import CustomerLedger from './pages/CustomerLedger';
+import SupplierLedger from './pages/SupplierLedger';
 
 function App() {
   return (
@@ -17,7 +19,9 @@ function App() {
         <Route path="/pharmacy-admin" element={<PharmacyDashboard />} />
         <Route path="/pos" element={<POSPage />} />
         <Route path="/sales-history" element={<BillsHistory />} />
+        <Route path="/customer-ledger" element={<CustomerLedger />} />
         <Route path="/suppliers" element={<SupplierManagement />} />
+        <Route path="/supplier-ledger" element={<SupplierLedger />} />
       </Routes>
     </Router>
   );

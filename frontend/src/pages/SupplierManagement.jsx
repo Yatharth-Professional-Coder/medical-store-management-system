@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import api from '../api/axios';
+import { Link } from 'react-router-dom';
 
 const SupplierManagement = () => {
     const [suppliers, setSuppliers] = useState([]);
@@ -53,7 +54,12 @@ const SupplierManagement = () => {
 
     return (
         <div className="p-8 bg-gray-100 min-h-screen">
-            <h1 className="text-3xl font-bold mb-6 text-gray-800">Supplier Management</h1>
+            <div className="flex justify-between items-center mb-6">
+                <h1 className="text-3xl font-bold text-gray-800">Supplier Management</h1>
+                <Link to="/supplier-ledger" className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 font-bold shadow">
+                    View Ledger
+                </Link>
+            </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 {/* Add Supplier Form */}
