@@ -64,6 +64,7 @@ const SuperAdminDashboard = () => {
 
     const pendingPharmacies = pharmacies.filter(p => p.status === 'Pending');
     const approvedPharmacies = pharmacies.filter(p => p.status === 'Approved');
+    const pausedPharmacies = pharmacies.filter(p => p.status === 'Paused');
 
     return (
         <div className="min-h-screen bg-[#f8fafc] font-sans pb-12">
@@ -100,6 +101,11 @@ const SuperAdminDashboard = () => {
                         <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest mb-1">Active Clusters</p>
                         <p className="text-4xl font-black text-emerald-600 tracking-tighter">{approvedPharmacies.length}</p>
                         <p className="text-[9px] font-bold text-slate-300 uppercase mt-2">Fully Operational</p>
+                    </div>
+                    <div className="bg-white p-8 rounded-[2rem] shadow-xl shadow-slate-200/50 border border-slate-100 flex flex-col items-center text-center hidden sm:flex">
+                        <p className="text-[10px] font-black text-red-500 uppercase tracking-widest mb-1">Paused Nodes</p>
+                        <p className="text-4xl font-black text-red-600 tracking-tighter">{pausedPharmacies.length}</p>
+                        <p className="text-[9px] font-bold text-slate-300 uppercase mt-2">Services Suspended</p>
                     </div>
                 </div>
 
@@ -205,18 +211,23 @@ const SuperAdminDashboard = () => {
                             ) : (
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     {approvedPharmacies.map((pharmacy) => (
-                                        <div key={pharmacy._id} className="group bg-white p-6 rounded-[2rem] border border-slate-100 hover:shadow-2xl hover:shadow-slate-200/50 transition-all relative overflow-hidden">
-                                            <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/5 rounded-full -mr-12 -mt-12 blur-2xl"></div>
+                                        <div key={pharmacy._id} className="group bg-white p-6 rounded-[2rem] border border-emerald-100 hover:shadow-2xl hover:shadow-emerald-200/50 transition-all relative overflow-hidden">
+                                            <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/5 rounded-full -mr-12 -mt-12 blur-2xl"></div>
                                             <div className="flex justify-between items-start mb-6">
-                                                <div className="w-12 h-12 bg-slate-50 text-slate-200 rounded-2xl flex items-center justify-center font-black text-2xl group-hover:bg-slate-900 group-hover:text-white transition-all shadow-inner">
+                                                <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center font-black text-2xl group-hover:bg-emerald-600 group-hover:text-white transition-all shadow-inner">
                                                     {pharmacy.name.charAt(0)}
                                                 </div>
-                                                <button onClick={() => handleDelete(pharmacy._id)} className="p-2 text-slate-100 hover:text-red-500 transition-colors">
-                                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                                                </button>
+                                                <div className="flex gap-2">
+                                                    <button onClick={() => handleStatusUpdate(pharmacy._id, 'Paused')} className="p-2 text-slate-400 hover:text-orange-500 transition-colors" title="Pause Services">
+                                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                                    </button>
+                                                    <button onClick={() => handleDelete(pharmacy._id)} className="p-2 text-slate-400 hover:text-red-500 transition-colors" title="Decommission">
+                                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                                    </button>
+                                                </div>
                                             </div>
                                             <div>
-                                                <h4 className="text-lg font-black text-slate-800 uppercase tracking-tight group-hover:text-blue-600 transition-colors">{pharmacy.name}</h4>
+                                                <h4 className="text-lg font-black text-slate-800 uppercase tracking-tight group-hover:text-emerald-600 transition-colors">{pharmacy.name}</h4>
                                                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">{pharmacy.contactNumber || 'N/A'}</p>
                                                 <div className="mt-4 pt-4 border-t border-slate-50 flex justify-between items-center">
                                                     <span className="text-[9px] font-black text-emerald-500 bg-emerald-50 px-3 py-1 rounded-full uppercase tracking-widest">Active Cluster</span>
@@ -227,7 +238,46 @@ const SuperAdminDashboard = () => {
                                     ))}
                                 </div>
                             )}
+
                         </div>
+
+                        {/* Paused Map */}
+                        {pausedPharmacies.length > 0 && (
+                            <div className="space-y-4">
+                                <h3 className="text-sm font-black text-red-500 uppercase tracking-[0.3em] px-2 flex items-center gap-3">
+                                    <span className="w-2 h-2 rounded-full bg-red-500"></span>
+                                    Suspended Nodes
+                                </h3>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {pausedPharmacies.map((pharmacy) => (
+                                        <div key={pharmacy._id} className="group bg-slate-50 p-6 rounded-[2rem] border border-slate-200 relative overflow-hidden opacity-90">
+                                            <div className="absolute top-0 right-0 w-24 h-24 bg-red-500/5 rounded-full -mr-12 -mt-12 blur-2xl"></div>
+                                            <div className="flex justify-between items-start mb-6">
+                                                <div className="w-12 h-12 bg-white text-slate-300 border border-slate-200 rounded-2xl flex items-center justify-center font-black text-2xl shadow-inner">
+                                                    {pharmacy.name.charAt(0)}
+                                                </div>
+                                                <div className="flex gap-2">
+                                                    <button onClick={() => handleStatusUpdate(pharmacy._id, 'Approved')} className="p-2 text-slate-400 hover:text-emerald-500 transition-colors" title="Resume Services">
+                                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                                    </button>
+                                                    <button onClick={() => handleDelete(pharmacy._id)} className="p-2 text-slate-400 hover:text-red-500 transition-colors" title="Decommission">
+                                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <h4 className="text-lg font-black text-slate-500 uppercase tracking-tight line-through decoration-slate-300">{pharmacy.name}</h4>
+                                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">{pharmacy.contactNumber || 'N/A'}</p>
+                                                <div className="mt-4 pt-4 border-t border-slate-200 flex justify-between items-center">
+                                                    <span className="text-[9px] font-black text-red-500 bg-red-50 px-3 py-1 rounded-full uppercase tracking-widest">Suspended</span>
+                                                    <span className="text-[9px] font-bold text-slate-300 uppercase italic">Key: {pharmacy.licenseNumber}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
             </main>

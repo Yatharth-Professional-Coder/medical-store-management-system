@@ -12,12 +12,20 @@ const authUser = asyncHandler(async (req, res) => {
     const user = await User.findOne({ email });
 
     if (user && (await user.matchPassword(password))) {
-        // Check if pharmacy is approved
+        // Check if pharmacy is approved or paused
         if (user.role === 'PharmacyAdmin' || user.role === 'PharmacyStaff') {
             const pharmacy = await Pharmacy.findById(user.pharmacyId);
-            if (pharmacy && pharmacy.status !== 'Approved') {
+            if (pharmacy && pharmacy.status === 'Pending') {
                 res.status(401);
-                throw new Error(`Your account is ${pharmacy.status}. Please contact Super Admin.`);
+                throw new Error('Your account is Pending approval. Please wait for Super Admin.');
+            }
+            if (pharmacy && pharmacy.status === 'Rejected') {
+                res.status(401);
+                throw new Error('Your account is Rejected. Please contact Super Admin.');
+            }
+            if (pharmacy && pharmacy.status === 'Paused') {
+                res.status(403);
+                throw new Error('Store services are temporarily paused. Please contact administrator.');
             }
         }
 
