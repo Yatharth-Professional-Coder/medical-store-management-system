@@ -7,7 +7,7 @@ const PharmacyDashboard = () => {
     const [medicines, setMedicines] = useState([]);
     const [suppliers, setSuppliers] = useState([]);
     const [formData, setFormData] = useState({
-        name: '', batchNumber: '', expiryDate: '', mrp: '', supplierPrice: '', quantity: '', supplier: '', minStockLevel: '', invoiceNumber: ''
+        name: '', batchNumber: '', expiryDate: '', mrp: '', price: '', supplierPrice: '', quantity: '', supplier: '', minStockLevel: '', invoiceNumber: ''
     });
     const [searchTerm, setSearchTerm] = useState('');
     const [suggestions, setSuggestions] = useState([]);
@@ -66,16 +66,20 @@ const PharmacyDashboard = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
+            const submitData = {
+                ...formData,
+                price: formData.price || formData.mrp
+            };
             if (editId) {
-                await api.put(`/medicines/${editId}`, formData);
+                await api.put(`/medicines/${editId}`, submitData);
                 alert('Medicine Updated');
                 setEditId(null);
             } else {
-                await api.post('/medicines', formData);
+                await api.post('/medicines', submitData);
                 alert('Medicine Added');
             }
             fetchMedicines();
-            setFormData({ name: '', batchNumber: '', expiryDate: '', mrp: '', supplierPrice: '', quantity: '', supplier: '', minStockLevel: '', invoiceNumber: '' });
+            setFormData({ name: '', batchNumber: '', expiryDate: '', mrp: '', price: '', supplierPrice: '', quantity: '', supplier: '', minStockLevel: '', invoiceNumber: '' });
         } catch (error) { alert(error.response?.data?.message || 'Error saving medicine'); }
     };
 
@@ -83,6 +87,7 @@ const PharmacyDashboard = () => {
         setEditId(medicine._id);
         setFormData({
             ...medicine,
+            price: medicine.price || medicine.mrp || '',
             expiryDate: new Date(medicine.expiryDate).toISOString().split('T')[0],
             supplier: medicine.supplier || ''
         });
@@ -133,10 +138,11 @@ const PharmacyDashboard = () => {
             }
             const payload = bulkData.map(item => ({
                 ...item,
+                price: item.price || item.mrp,
                 supplier: bulkSupplier,
                 invoiceNumber: bulkInvoiceNumber
             }));
-            await api.post('/medicines/bulk', { medicines: payload });
+            await api.post('/medicines/bulk', payload);
             alert('Bulk Medicines Added Successfully');
             setIsBulkMode(false);
             setBulkData([{ name: '', batchNumber: '', expiryDate: '', mrp: '', supplierPrice: '', quantity: '', minStockLevel: '' }]);

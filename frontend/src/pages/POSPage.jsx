@@ -42,13 +42,14 @@ const POSPage = () => {
                 alert('Out of Stock!');
                 return;
             }
+            const unitPrice = medicine.price !== undefined && medicine.price !== null ? medicine.price : medicine.mrp;
             setCart([...cart, {
                 medicineId: medicine._id,
                 name: medicine.name,
                 batchNumber: medicine.batchNumber,
-                price: medicine.mrp,
+                price: unitPrice,
                 quantity: 1,
-                amount: medicine.mrp
+                amount: unitPrice
             }]);
         }
     };
@@ -184,7 +185,7 @@ const POSPage = () => {
                                                 <div className="flex justify-between items-end">
                                                     <div>
                                                         <p className={`text-[10px] font-black uppercase tracking-widest ${isCarted ? 'text-blue-100' : 'text-slate-400'}`}>Unit Price</p>
-                                                        <p className="text-lg sm:text-xl font-black">₹{medicine.mrp}</p>
+                                                        <p className="text-lg sm:text-xl font-black">₹{medicine.price !== undefined && medicine.price !== null ? medicine.price : medicine.mrp}</p>
                                                     </div>
                                                     <div className="text-right">
                                                         <p className={`text-[9px] font-black uppercase tracking-widest ${isCarted ? 'text-blue-100' : 'text-slate-400'}`}>Stock</p>

@@ -21,17 +21,19 @@ const addMedicine = asyncHandler(async (req, res) => {
         invoiceNumber
     } = req.body;
 
+    const sellingPrice = (price !== undefined && price !== '' && !isNaN(price)) ? Number(price) : Number(mrp);
+
     const medicine = await Medicine.create({
         name,
         batchNumber,
         expiryDate,
-        mrp,
-        supplierPrice,
-        price,
-        quantity,
+        mrp: Number(mrp),
+        supplierPrice: Number(supplierPrice),
+        price: sellingPrice,
+        quantity: Number(quantity),
         pharmacyId: req.user.pharmacyId,
-        supplier,
-        minStockLevel,
+        supplier: supplier || undefined,
+        minStockLevel: minStockLevel ? Number(minStockLevel) : 10,
         invoiceNumber
     });
 
@@ -45,9 +47,9 @@ const addMedicine = asyncHandler(async (req, res) => {
                 name,
                 batchNumber,
                 expiryDate,
-                mrp,
-                supplierPrice,
-                quantity
+                mrp: Number(mrp),
+                supplierPrice: Number(supplierPrice),
+                quantity: Number(quantity)
             });
         }
 
@@ -57,7 +59,7 @@ const addMedicine = asyncHandler(async (req, res) => {
                 pharmacyId: req.user.pharmacyId,
                 supplierId: supplier,
                 type: 'Purchase',
-                amount: supplierPrice * quantity,
+                amount: Number(supplierPrice) * Number(quantity),
                 description: `Purchase: ${name} (Batch: ${batchNumber}, Invoice: ${invoiceNumber || 'N/A'})`,
                 date: new Date()
             });
@@ -73,9 +75,11 @@ const addMedicine = asyncHandler(async (req, res) => {
 // @route   POST /api/medicines/bulk
 // @access  Pharmacy Admin
 const addBulkMedicines = asyncHandler(async (req, res) => {
-    const medicinesData = req.body; // Expects an array
+    const medicinesData = Array.isArray(req.body) 
+        ? req.body 
+        : (Array.isArray(req.body?.medicines) ? req.body.medicines : null);
 
-    if (!Array.isArray(medicinesData) || medicinesData.length === 0) {
+    if (!medicinesData || medicinesData.length === 0) {
         res.status(400);
         throw new Error('No medicines data provided');
     }
@@ -83,7 +87,7 @@ const addBulkMedicines = asyncHandler(async (req, res) => {
     const processedMedicines = medicinesData.map(med => ({
         ...med,
         pharmacyId: req.user.pharmacyId,
-        price: med.price || med.mrp // Fallback logic if needed
+        price: (med.price !== undefined && med.price !== '' && !isNaN(med.price)) ? Number(med.price) : Number(med.mrp)
     }));
 
     try {
@@ -147,12 +151,16 @@ const updateMedicine = asyncHandler(async (req, res) => {
         medicine.name = req.body.name || medicine.name;
         medicine.batchNumber = req.body.batchNumber || medicine.batchNumber;
         medicine.expiryDate = req.body.expiryDate || medicine.expiryDate;
-        medicine.mrp = req.body.mrp || medicine.mrp;
-        medicine.supplierPrice = req.body.supplierPrice || medicine.supplierPrice;
-        medicine.price = req.body.price || medicine.price;
-        medicine.quantity = req.body.quantity || medicine.quantity;
+        if (req.body.mrp !== undefined && req.body.mrp !== '') medicine.mrp = Number(req.body.mrp);
+        if (req.body.supplierPrice !== undefined && req.body.supplierPrice !== '') medicine.supplierPrice = Number(req.body.supplierPrice);
+        if (req.body.price !== undefined && req.body.price !== '') {
+            medicine.price = Number(req.body.price);
+        } else if (req.body.mrp !== undefined && req.body.mrp !== '') {
+            medicine.price = Number(req.body.mrp);
+        }
+        if (req.body.quantity !== undefined && req.body.quantity !== '') medicine.quantity = Number(req.body.quantity);
         medicine.supplier = req.body.supplier || medicine.supplier;
-        medicine.minStockLevel = req.body.minStockLevel || medicine.minStockLevel;
+        if (req.body.minStockLevel !== undefined && req.body.minStockLevel !== '') medicine.minStockLevel = Number(req.body.minStockLevel);
         medicine.invoiceNumber = req.body.invoiceNumber || medicine.invoiceNumber;
 
         const updatedMedicine = await medicine.save();

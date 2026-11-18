@@ -23,7 +23,10 @@ const medicineSchema = mongoose.Schema({
     },
     price: { // Selling Price (can be less than or equal to MRP)
         type: Number,
-        required: true
+        required: false,
+        default: function() {
+            return this.mrp;
+        }
     },
     quantity: {
         type: Number,
@@ -49,6 +52,12 @@ const medicineSchema = mongoose.Schema({
     }
 }, {
     timestamps: true
+});
+
+medicineSchema.pre('validate', function() {
+    if (this.price === undefined || this.price === null || isNaN(this.price)) {
+        this.price = this.mrp;
+    }
 });
 
 const Medicine = mongoose.model('Medicine', medicineSchema);
