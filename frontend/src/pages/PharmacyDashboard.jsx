@@ -17,6 +17,10 @@ const PharmacyDashboard = () => {
     const [bulkInvoiceNumber, setBulkInvoiceNumber] = useState('');
     const [bulkData, setBulkData] = useState([{ name: '', batchNumber: '', expiryDate: '', mrp: '', supplierPrice: '', quantity: '', minStockLevel: '' }]);
     const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth > 1024);
+    const [pharmacyName, setPharmacyName] = useState(() => {
+        const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+        return userInfo.pharmacyName || 'Pharmacy';
+    });
 
     const navigate = useNavigate();
     const location = useLocation();
@@ -26,10 +30,27 @@ const PharmacyDashboard = () => {
         if (!userInfo || (userInfo.role !== 'PharmacyAdmin' && userInfo.role !== 'PharmacyStaff')) {
             navigate('/');
         } else {
+            if (userInfo.pharmacyName) {
+                setPharmacyName(userInfo.pharmacyName);
+            }
+            fetchPharmacyDetails();
             fetchMedicines();
             fetchSuppliers();
         }
     }, [navigate]);
+
+    const fetchPharmacyDetails = async () => {
+        try {
+            const { data } = await api.get('/pharmacies/my-pharmacy');
+            if (data && data.name) {
+                setPharmacyName(data.name);
+                const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+                localStorage.setItem('userInfo', JSON.stringify({ ...userInfo, pharmacyName: data.name }));
+            }
+        } catch (error) {
+            console.error('Error fetching pharmacy profile', error);
+        }
+    };
 
     const fetchMedicines = async () => {
         try {
@@ -177,11 +198,11 @@ const PharmacyDashboard = () => {
             {/* Sidebar (Desktop) */}
             <aside className={`fixed inset-y-0 left-0 z-50 w-72 bg-slate-900 text-white transition-transform duration-300 lg:relative lg:translate-x-0 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
                 <div className="h-full flex flex-col p-6">
-                    <div className="flex items-center gap-3 mb-10 px-2">
-                        <div className="w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20">
-                            <span className="text-xl font-black">M</span>
+                    <div className="flex items-center gap-3 mb-10 px-2 min-w-0">
+                        <div className="w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20 shrink-0">
+                            <span className="text-xl font-black uppercase">{pharmacyName ? pharmacyName.charAt(0) : 'P'}</span>
                         </div>
-                        <h2 className="text-xl font-black tracking-tight uppercase">Madaan Medicos</h2>
+                        <h2 className="text-xl font-black tracking-tight uppercase truncate" title={pharmacyName}>{pharmacyName}</h2>
                     </div>
 
                     <nav className="flex-1 space-y-2">
@@ -213,8 +234,8 @@ const PharmacyDashboard = () => {
                     <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="p-2 bg-slate-100 rounded-xl">
                         <svg className="w-6 h-6 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
                     </button>
-                    <h2 className="text-lg font-black text-slate-900 tracking-tight">INVENTORY</h2>
-                    <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center font-bold text-blue-600 text-xs">AD</div>
+                    <h2 className="text-lg font-black text-slate-900 tracking-tight uppercase truncate max-w-[200px]">{pharmacyName}</h2>
+                    <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center font-bold text-blue-600 text-xs uppercase">{pharmacyName ? pharmacyName.slice(0, 2) : 'PH'}</div>
                 </div>
 
                 <div className="p-4 sm:p-8 space-y-8 max-w-7xl mx-auto">

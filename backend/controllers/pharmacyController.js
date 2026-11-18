@@ -195,4 +195,22 @@ const deletePharmacy = asyncHandler(async (req, res) => {
     }
 });
 
-module.exports = { createPharmacy, getPharmacies, deletePharmacy, registerPharmacy, updatePharmacyStatus };
+// @desc    Get logged in user's pharmacy
+// @route   GET /api/pharmacies/my-pharmacy
+// @access  Pharmacy Admin / Staff
+const getMyPharmacy = asyncHandler(async (req, res) => {
+    if (!req.user.pharmacyId) {
+        res.status(404);
+        throw new Error('No pharmacy associated with this account');
+    }
+
+    const pharmacy = await Pharmacy.findById(req.user.pharmacyId);
+    if (!pharmacy) {
+        res.status(404);
+        throw new Error('Pharmacy not found');
+    }
+
+    res.json(pharmacy);
+});
+
+module.exports = { createPharmacy, getPharmacies, deletePharmacy, registerPharmacy, updatePharmacyStatus, getMyPharmacy };

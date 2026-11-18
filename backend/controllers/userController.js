@@ -12,6 +12,7 @@ const authUser = asyncHandler(async (req, res) => {
     const user = await User.findOne({ email });
 
     if (user && (await user.matchPassword(password))) {
+        let pharmacyName = null;
         // Check if pharmacy is approved or paused
         if (user.role === 'PharmacyAdmin' || user.role === 'PharmacyStaff') {
             const pharmacy = await Pharmacy.findById(user.pharmacyId);
@@ -27,6 +28,9 @@ const authUser = asyncHandler(async (req, res) => {
                 res.status(403);
                 throw new Error('Store services are temporarily paused. Please contact administrator.');
             }
+            if (pharmacy) {
+                pharmacyName = pharmacy.name;
+            }
         }
 
         res.json({
@@ -35,6 +39,7 @@ const authUser = asyncHandler(async (req, res) => {
             email: user.email,
             role: user.role,
             pharmacyId: user.pharmacyId,
+            pharmacyName: pharmacyName,
             token: generateToken(user._id),
         });
     } else {

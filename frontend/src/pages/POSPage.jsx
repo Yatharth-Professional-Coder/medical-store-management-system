@@ -10,6 +10,8 @@ const POSPage = () => {
     const [customerMobile, setCustomerMobile] = useState('');
     const [discount, setDiscount] = useState(0);
     const [showCart, setShowCart] = useState(false); // Mobile cart visibility
+    const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+    const pharmacyName = userInfo.pharmacyName || '';
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -123,7 +125,7 @@ const POSPage = () => {
                     </button>
                     <div>
                         <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">Point of Sale</h1>
-                        <p className="text-[10px] sm:text-xs font-bold text-blue-600 uppercase tracking-widest hidden sm:block">Digital Billing Terminal</p>
+                        <p className="text-[10px] sm:text-xs font-bold text-blue-600 uppercase tracking-widest hidden sm:block">{pharmacyName ? `${pharmacyName} • ` : ''}Digital Billing Terminal</p>
                     </div>
                 </div>
 
